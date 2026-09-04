@@ -1,33 +1,14 @@
--- phpMyAdmin SQL Dump
--- version 5.2.1
--- https://www.phpmyadmin.net/
---
--- Host: localhost
--- Generation Time: Aug 22, 2026 at 04:50 AM
--- Server version: 10.4.32-MariaDB
--- PHP Version: 8.0.30
-
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
 SET time_zone = "+00:00";
-
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
 /*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
 /*!40101 SET NAMES utf8mb4 */;
 
---
--- Database: `capstone_group_8`
---
 CREATE DATABASE IF NOT EXISTS `capstone_group_8` DEFAULT CHARACTER SET latin1 COLLATE latin1_swedish_ci;
 USE `capstone_group_8`;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `Inventory`
---
 
 DROP TABLE IF EXISTS `Inventory`;
 CREATE TABLE IF NOT EXISTS `Inventory` (
@@ -42,12 +23,8 @@ CREATE TABLE IF NOT EXISTS `Inventory` (
   PRIMARY KEY (`ProductID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
 
---
--- Dumping data for table `Inventory`
---
-
 INSERT INTO `Inventory` (`ProductID`, `SuppliersID`, `Description`, `ProductType`, `QtyOnHand`, `LastPrice`, `TotalQtyDesired`, `Supplier`) VALUES
-('*', '000305-0003-F-P001 ', 'Salmon Pink 1 lb Coarse Frit', 'Frit and powder', 0, 18.20, 0, 'Bullseye'),
+('24322', '000305-0003-F-P001 ', 'Salmon Pink 1 lb Coarse Frit', 'Frit and powder', 0, 18.20, 0, 'Bullseye'),
 ('24323', '000108-0003-F-P005 ', 'Powder Blue Coarse Frit', 'Frit and powder', 0, 0.00, 1, 'Bullseye'),
 ('24324', '000112-0003-F-P005 ', 'Mint Green Coarse Frit', 'Frit and powder', 0, 0.00, 1, 'Bullseye'),
 ('24325', '000113-0001-F-P005 ', 'White Fine Frit 5 lb', 'Frit and powder', 0, 37.38, 1, 'Bullseye'),
@@ -554,7 +531,8 @@ INSERT INTO `Inventory` (`ProductID`, `SuppliersID`, `Description`, `ProductType
 ('34569', '001120-0008-F-P005 ', 'Yellow Powder', 'Frit and powder', 0, 0.00, 1, 'Bullseye'),
 ('34570', '001322-0008-F-P005 ', 'Garnet Red Powder', 'Frit and powder', 0, 0.00, 1, 'Bullseye'),
 ('34579', '001332-0001-F-P001 ', 'Fuschia Fine Frit 1 LB', 'Frit and powder', 0, 0.00, 0, 'Bullseye'),
-('34581', '000101-0001-F-P001 ', 'Stiff Black Fine Frit', 'Frit and powder', 0, 0.00, 0, 'Bullseye'),
+('34581', '000101-0001-F-P001 ', 'Stiff Black Fine Frit', 'Frit and powder', 0, 0.00, 0, 'Bullseye');
+INSERT INTO `Inventory` (`ProductID`, `SuppliersID`, `Description`, `ProductType`, `QtyOnHand`, `LastPrice`, `TotalQtyDesired`, `Supplier`) VALUES
 ('34582', '000104-0001-F-OZ05 ', 'Glacier Blue Fine Frit 5oz', 'Frit and powder', 0, 0.00, 0, 'Bullseye'),
 ('34584', '000138-0001-F-P001 ', 'Marzipan Fine Frit 1 LB', 'Frit and powder', 0, 1.28, 0, 'Bullseye'),
 ('34585', '000225-0001-F-P001 ', 'Pimento Red 1 LB Fine Frit', 'Frit and powder', 0, 0.00, 0, 'Bullseye'),
@@ -711,12 +689,6 @@ INSERT INTO `Inventory` (`ProductID`, `SuppliersID`, `Description`, `ProductType
 ('43318', '001823-0030-F-FULL ', 'NFC Burnt Scarlet Striker', 'Sheet glass', 0, 116.16, 0, 'Bullseye'),
 ('X', '006010-0000-P-HALF ', 'Toffee Opalescent Mottle', 'Sheet glass', 0, 30.93, 0, 'Bullseye');
 
--- --------------------------------------------------------
-
---
--- Table structure for table `InvoiceLineItems`
---
-
 DROP TABLE IF EXISTS `InvoiceLineItems`;
 CREATE TABLE IF NOT EXISTS `InvoiceLineItems` (
   `InvoiceNumber` varchar(10) NOT NULL,
@@ -724,21 +696,18 @@ CREATE TABLE IF NOT EXISTS `InvoiceLineItems` (
   `SuppliersID` varchar(50) NOT NULL,
   `SuppliersDesc` text NOT NULL,
   `Rate` decimal(10,2) NOT NULL,
-  `Amount` decimal(10,2) NOT NULL
+  `Amount` decimal(10,2) NOT NULL,
+  UNIQUE KEY `LineID` (`InvoiceNumber`,`SuppliersID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
-
---
--- Dumping data for table `InvoiceLineItems`
---
 
 INSERT INTO `InvoiceLineItems` (`InvoiceNumber`, `Quantity`, `SuppliersID`, `SuppliersDesc`, `Rate`, `Amount`) VALUES
 ('INV009001', 1, '000013-0107-F-TUBE', 'Opaque White 1 mm Stringer', 15.53, 15.53),
 ('INV009001', 1, '000025-0030-F-FULL', 'Tangerine Orange Opalescent, Dbl-Rolled, 3 mm, Fusible, 35 x 20 in., F...', 61.73, 61.73),
 ('INV009001', 1, '000100-0030-F-FULL ', 'Black Opalescent, Dbl-Rolled, 3 mm, Fusible, 35 x 20 in., F...', 61.73, 61.73),
+('INV009001', 1, '000108-0272-F-TUBE ', 'Powder Blue Opalescent, Stringer, 2mm, Fusible, by the Tube', 15.53, 15.53),
 ('INV009001', 1, '000112-0030-F-FULL ', 'Mint Green Opalescent, Dbl-Rolled, 3 mm, Fusible, 35 x 20 in., F...', 53.98, 53.98),
 ('INV009001', 1, '000113-0008-F-P005 ', 'White Opalescent, Powder Frit, Fusible, 5 lb. jar', 57.43, 57.43),
 ('INV009001', 2, '000114-0030-F-FULL ', 'Cobalt Blue Opalescent, Dbl-Rolled, 3 mm, Fusible, 35 x 20 in., F...', 53.98, 107.95),
-('INV009001', 1, '000108-0272-F-TUBE ', 'Powder Blue Opalescent, Stringer, 2mm, Fusible, by the Tube', 15.53, 15.53),
 ('INV009001', 1, '000124-0030-F-FULL ', 'Red', 61.73, 61.73),
 ('INV009001', 1, '000126-0030-F-FULL ', 'Spring Green', 61.73, 61.73),
 ('INV009001', 1, '000132-0030-F-FULL ', 'Driftwood Gray ', 53.98, 53.98),
@@ -772,12 +741,7 @@ INSERT INTO `InvoiceLineItems` (`InvoiceNumber`, `Quantity`, `SuppliersID`, `Sup
 ('INV009001', 1, '002250-0000-F-FULL ', 'Soft Yellow Opal, Deep Red Streaky', 61.73, 61.73),
 ('INV009001', 1, '008710-PAPR-M-EACH ', 'Bullseye ThinFire Shelf Paper (Roll, Narrow, 65 x 20.5\")', 114.00, 114.00);
 
--- --------------------------------------------------------
-
---
--- Table structure for table `Invoices`
---
-
+DROP TABLE IF EXISTS `invoices`;
 DROP TABLE IF EXISTS `Invoices`;
 CREATE TABLE IF NOT EXISTS `Invoices` (
   `InvoiceNumber` varchar(50) NOT NULL,
@@ -785,25 +749,17 @@ CREATE TABLE IF NOT EXISTS `Invoices` (
   `ShipDate` date NOT NULL,
   `DueDate` date NOT NULL,
   `SalesOrderNo` varchar(50) NOT NULL,
-  `ShippingHandling` decimal(10,2) NOT NULL,
-  `TotalAmt` decimal(10,2) NOT NULL,
+  `ShippingHandling` float NOT NULL,
+  `TotalAmt` float NOT NULL,
   `Supplier` varchar(20) NOT NULL,
-  `File` blob DEFAULT NULL,
-  PRIMARY KEY (`InvoiceNumber`)
+  `File` longblob DEFAULT NULL,
+  PRIMARY KEY (`InvoiceNumber`),
+  KEY `ix_Invoices_InvoiceNumber` (`InvoiceNumber`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
 
---
--- Dumping data for table `Invoices`
---
 
 INSERT INTO `Invoices` (`InvoiceNumber`, `OrderDate`, `ShipDate`, `DueDate`, `SalesOrderNo`, `ShippingHandling`, `TotalAmt`, `Supplier`, `File`) VALUES
 ('INV009001', '2023-06-12', '2023-06-11', '2023-07-12', 'S5361228', 695.69, 3135.74, 'Bullseye', NULL);
-
--- --------------------------------------------------------
-
---
--- Table structure for table `Suppliers`
---
 
 DROP TABLE IF EXISTS `Suppliers`;
 CREATE TABLE IF NOT EXISTS `Suppliers` (
@@ -812,10 +768,6 @@ CREATE TABLE IF NOT EXISTS `Suppliers` (
   `ContactEmail` varchar(50) DEFAULT NULL,
   `ContactPhone` varchar(15) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
-
---
--- Dumping data for table `Suppliers`
---
 
 INSERT INTO `Suppliers` (`SupplierName`, `ContactName`, `ContactEmail`, `ContactPhone`) VALUES
 ('Bullseye', 'Sarah Buchanan', 'sbuch@bullseye.com', '555-555-5555'),
