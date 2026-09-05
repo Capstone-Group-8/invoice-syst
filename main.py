@@ -67,7 +67,7 @@ def read_invoice_items(InvoiceNumber: str, db: Session = Depends(get_db)):
 def create_new_invoice(invoice: InvoiceCreate, db: Session = Depends(get_db)):
     return crud.create_invoice(db, invoice)
 
-#needed?
+#is this also an http endpoint?
 def create_new_line_item(line_item: InvoiceLineItemCreate, db: Session = Depends(get_db)):
     return crud.create_line_item(db, line_item)
 
@@ -84,7 +84,7 @@ def update_invoice(InvoiceNumber: str, invoice: InvoiceUpdate, db: Session = Dep
         raise HTTPException(status_code=404, detail="invoice not found")
     return updated
 
-@app.put("/lineitem/{InvoiceNumber}", response_model=InvoiceLineItem)
+@app.put("/lineitem/{InvoiceNumber}", response_model=InvoiceLineItem) #are you sure about that URL
 def update_line_item(InvoiceNumber: str, SuppliersID: str, line_item: InvoiceLineItemUpdate, db: Session = Depends(get_db)):
     updated = crud.update_line_item(db, InvoiceNumber, SuppliersID, line_item)
     if not updated:

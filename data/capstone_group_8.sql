@@ -753,8 +753,7 @@ CREATE TABLE IF NOT EXISTS `Invoices` (
   `TotalAmt` float NOT NULL,
   `Supplier` varchar(20) NOT NULL,
   `File` longblob DEFAULT NULL,
-  PRIMARY KEY (`InvoiceNumber`),
-  KEY `ix_Invoices_InvoiceNumber` (`InvoiceNumber`)
+  PRIMARY KEY (`InvoiceNumber`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
 
 
@@ -766,7 +765,8 @@ CREATE TABLE IF NOT EXISTS `Suppliers` (
   `SupplierName` varchar(50) NOT NULL,
   `ContactName` varchar(50) DEFAULT NULL,
   `ContactEmail` varchar(50) DEFAULT NULL,
-  `ContactPhone` varchar(15) DEFAULT NULL
+  `ContactPhone` varchar(15) DEFAULT NULL,
+PRIMARY KEY (`SupplierName`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
 
 INSERT INTO `Suppliers` (`SupplierName`, `ContactName`, `ContactEmail`, `ContactPhone`) VALUES

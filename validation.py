@@ -3,38 +3,34 @@ Created on Aug 26, 2026
 
 @author: Sally Little
 '''
-#from fastapi import Depends
-#from main import get_db
-#from models import Invoice, InvoiceLineItem
-#import crud
+
+#from inv import CompleteInvoice, InvoiceLine
+
 import re
 
-
-#invoice = crud.get_invoice(Depends(get_db), InvoiceNumber)
-#line_items = crud.get_line_items(Depends(get_db), InvoiceNumber)
 
 def fail_line_semantic_validation(key, desc, count):
     #rewrite this function to present the error to the user
     #and guess the correction?
     print(f"Failed line validation: {desc}\nSupplier ID implies {key}, but the description does not contain the keyword(s).")
-    #return(f"Semantic_error (line {count}) ")
+    #return(f"Semantic_error (line {count}) /")
 
 def fail_line_syntactic_validation(SupplierID, count):
     #rewrite this function to present the error to the user
     print(f"Failed line validation: {SupplierID} does not follow the required format.")
-    return(f"Syntax_error (line {count}) ")
+    return(f"Syntax_error (line {count}) /")
 
 def fail_line_arithmetic_validation(line, count):
     #rewrite this function to present the error to the user
     #and guess the correction?
     print(f"Failed line validation: {line.SuppliersID}\n{line.Quantity} times ${line.Rate} is not ${line.Amount}")
-    return(f"Arithmetic_line_error (line {count}) ")
+    return(f"Arithmetic_line_error (line {count}) /")
 
 def fail_total_arithmetic_validation(invoice, subtotal):
     #rewrite this function to present the error to the user
     #and guess the correction?
     print(f"Failed total validation:\nSubtotal ${subtotal} + shipping cost ${invoice.shipping} is not ${invoice.total}")
-    return(f"Arithmetic_total_error ")
+    return(f"Arithmetic_total_error /")
 
 
 def test_line_semantic_validation(line, group1, group3, count):
@@ -44,10 +40,10 @@ def test_line_semantic_validation(line, group1, group3, count):
         for key in keys:
             print("key", key)
             if key not in desc:
-                print("fail")
+                #print("fail")
                 fail_line_semantic_validation(keys, line.Description, count)
-                return(f"Semantic_error (line {count}) ")
-        print("pass")
+                return(f"Semantic_error (line {count}) /")
+        #print("pass")
         return "200"
     return_group = ""
     if (group1 == '0030'):
@@ -82,7 +78,8 @@ def test_line_semantic_validation(line, group1, group3, count):
     else:
         return '200'
 
-def validate(invoice, line_items):
+def validate(invoice):
+    line_items = invoice.line_items
     subtotal = 0
     errors = ""
     count = 0
@@ -111,6 +108,29 @@ def validate(invoice, line_items):
         return "200"
     else:
         return errors
-               
-        
+'''
+0: InvoiceNumber
+1: Supplier
+2: OrderDate
+3: ShipDate
+4: DueDate
+5: SalesOrderNo
+6: ShippingHandling
+7: TotalAmt
+8: line item 1
+9: line item 2...
+'''               
+def update_confidence_scores(invoice, scores):
+    errors = validate(invoice)
+    if (errors = "200"):
+        return invoice, scores
+    error_list = errors.splice('/')
+    for err in error_list:
+        if err.starts("Arithmetic_total_error"):
+            scores[7] = 0
+        else:
+            #get the number out of (line )
+            #scores[n] = 0
+    return scores
+            
         
