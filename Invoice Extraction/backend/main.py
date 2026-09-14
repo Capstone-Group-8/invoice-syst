@@ -4,6 +4,7 @@ import json
 from ocr_reader import extract_text
 from invoice_parser import parse_invoice_fields
 import shutil
+import use_data
 
 DROPBOX = "C:/HW/invoice extractor/dropbox"
 PROCESSED = "C:/HW/invoice extractor/processed"
@@ -15,7 +16,8 @@ def process_file(path):
     print(f"Processing: {path}")
 
     lines = extract_text(path)       
-    parsed = parse_invoice_fields(lines) 
+    parsed = parse_invoice_fields(lines)
+    use_data.parse(lines) 
 
     base = os.path.basename(path)
     out_path = os.path.join(PROCESSED, base + ".json")

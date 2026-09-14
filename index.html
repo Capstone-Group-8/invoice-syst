@@ -147,7 +147,7 @@ function loadInvoices() {
     </thead>
     <tbody></tbody>
 </table>
-
+<button onclick="foo()">Add Invoice</button>
   <div class="footer"><h4>Copyright 2026 Kieran Little</h4></div>
 </div>
 
@@ -178,7 +178,11 @@ document.body.innerHTML = head + mainpage
         });
 }
 
-
+/////////////////////////
+function foo() {
+    fetch(API_URL+'/upload');
+    
+}
 
 ////////////////////////////////////////////
 function editInvoice(id, order_date, ship_date, due_date, sales_no, shipping, total, supplier) {

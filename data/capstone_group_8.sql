@@ -770,7 +770,7 @@ PRIMARY KEY (`SupplierName`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
 
 INSERT INTO `Suppliers` (`SupplierName`, `ContactName`, `ContactEmail`, `ContactPhone`) VALUES
-('Bullseye', 'Sarah Buchanan', 'sbuch@bullseye.com', '555-555-5555'),
+('Bullseye Glass Co.', 'Sarah Buchanan', 'sbuch@bullseye.com', '555-555-5555'),
 ('Mountain Glass', 'Dan McMahon', 'danmcmahon@mountainglass.com', '555-987-5865');
 COMMIT;
 

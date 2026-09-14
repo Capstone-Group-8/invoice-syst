@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session # in session.py
 from database import SessionLocal, engine
 import models
 import crud
+import uploader
 from schemas import Inventory, InventoryCreate, InventoryUpdate, Invoice, InvoiceCreate, InvoiceUpdate, InvoiceLineItem, InvoiceLineItemUpdate, InvoiceLineItemCreate, Supplier
 
 ## add the following to solve CORE problem
@@ -62,6 +63,10 @@ def read_invoice_items(InvoiceNumber: str, db: Session = Depends(get_db)):
 #need a function to read one line item/inventory entry?
 #no use case to read one supplier
 
+@app.get("/upload")
+def upload():
+    invoice_file = uploader.upload_invoice()
+    return uploader.push_initial_read(invoice_file)
 
 @app.post("/invoices/all", response_model=Invoice)
 def create_new_invoice(invoice: InvoiceCreate, db: Session = Depends(get_db)):

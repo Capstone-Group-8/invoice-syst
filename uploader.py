@@ -7,12 +7,16 @@ import validation
 import inventory_updater
 from inv import CompleteInvoice
 
+def upload_invoice():
+    pass
+
 def use_ocr(payload):
+    pass
     
 
-def push_initial_read(payload):
-    payload, scores = calls the ocr
-    creates new invoice called invoice using the payload.
+def push_initial_read(invoice_file):
+    payload, scores = use_ocr(invoice_file)
+    #creates new invoice called invoice using the payload.
    calls (/invoices/all POST which calls) main.create_new_invoice once
     calls (/invoices/{InvoiceNumber/lineitems POST which calls) main.create_new_line_item repeatedly with payload
     scores = validation.update_confidence_scores(invoice, scores)
