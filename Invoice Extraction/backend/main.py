@@ -6,8 +6,8 @@ from invoice_parser import parse_invoice_fields
 import shutil
 import use_data
 
-DROPBOX = "C:/HW/invoice extractor/dropbox"
-PROCESSED = "C:/HW/invoice extractor/processed"
+DROPBOX = "../dropbox"
+PROCESSED = "../processed"
 
 os.makedirs(DROPBOX, exist_ok=True)
 os.makedirs(PROCESSED, exist_ok=True)
