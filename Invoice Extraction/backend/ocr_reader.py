@@ -1,59 +1,63 @@
-import easyocr
-import fitz  # PyMuPDF
+"""
+Invoice Extractor
+Author: Andres Ortiz Sanchez
+"""
+
 import os
+import tempfile
+
+import easyocr
+import fitz
+import numpy as np
+from PIL import Image
+
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+TEMP_DIR = os.path.join(BASE_DIR, "temp")
+os.makedirs(TEMP_DIR, exist_ok=True)
 
 reader = easyocr.Reader(["en"], gpu=False)
 
+
+def process_ocr_results(ocr_results, page_number):
+    results = []
+    for bounding_box, text, confidence in ocr_results:
+        x = min(point[0] for point in bounding_box)
+        y = min(point[1] for point in bounding_box)
+        width = max(point[0] for point in bounding_box) - x
+        height = max(point[1] for point in bounding_box) - y
+
+        results.append({
+            "text": text.strip(),
+            "confidence": float(confidence),
+            "x": x,
+            "y": y,
+            "width": width,
+            "height": height,
+            "page": page_number
+        })
+    return results
+
+
 def extract_text(path):
-    words = []
-
-    # PDF → images
-    if path.lower().endswith(".pdf"):
-        doc = fitz.open(path)
-
-        for i, page in enumerate(doc):
-            pix = page.get_pixmap(dpi=300)
-            img_path = f"temp_page_{i}.png"
-            pix.save(img_path)
-
-            # EasyOCR returns list of strings when detail=0
-            results = reader.readtext(img_path, detail=0)
-
-            # Add raw words exactly as OCR returns them
-            for item in results:
-                words.append(item)
-
-            os.remove(img_path)
-
-        doc.close()
-        return words
-
-    # Image → OCR
-    else:
-        results = reader.readtext(path, detail=0)
-        for item in results:
-            words.append(item)
-        return words
-
-
-def extract_text_with_confidence(path):
-    """Return OCR text and EasyOCR confidence for review/flagging."""
-    results_out = []
+    results = []
 
     if path.lower().endswith(".pdf"):
-        doc = fitz.open(path)
-        for i, page in enumerate(doc):
-            pix = page.get_pixmap(dpi=300)
-            img_path = f"temp_page_{i}.png"
-            pix.save(img_path)
-            results = reader.readtext(img_path, detail=1)
-            for _box, text, confidence in results:
-                results_out.append({"text": text, "confidence": float(confidence)})
-            os.remove(img_path)
-        doc.close()
-    else:
-        results = reader.readtext(path, detail=1)
-        for _box, text, confidence in results:
-            results_out.append({"text": text, "confidence": float(confidence)})
+        with tempfile.TemporaryDirectory(prefix="invoice_ocr_", dir=TEMP_DIR) as tmp_dir:
+            with fitz.open(path) as doc:
+                for page_number, page in enumerate(doc, start=1):
+                    pix = page.get_pixmap(dpi=200)
 
-    return results_out
+                    page_path = os.path.join(tmp_dir, f"page_{page_number}.png")
+                    pix.save(page_path)
+
+                    img = Image.open(page_path).convert("RGB")
+                    img_array = np.array(img)
+
+                    ocr_results = reader.readtext(img_array, detail=1)
+                    results.extend(process_ocr_results(ocr_results, page_number))
+    else:
+        ocr_results = reader.readtext(path, detail=1)
+        results.extend(process_ocr_results(ocr_results, 1))
+
+    return results
