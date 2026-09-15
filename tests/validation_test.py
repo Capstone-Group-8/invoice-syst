@@ -3,6 +3,10 @@ Unit test for testing the validation logic.
 @Sally Little
 Aug 31 2026
 '''
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
 import validation
 from inv import InvoiceLine, CompleteInvoice
 
