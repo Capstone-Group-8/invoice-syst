@@ -1,5 +1,0 @@
-easyocr
-PyMuPDF
-pillow
-opencv-python
-numpy
