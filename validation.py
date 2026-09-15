@@ -121,16 +121,24 @@ def validate(invoice):
 9: line item 2...
 '''               
 def update_confidence_scores(invoice, scores):
+    """Lower confidence for fields/lines that fail deterministic validation."""
     errors = validate(invoice)
-    if (errors = "200"):
+    if errors == "200":
         return invoice, scores
-    error_list = errors.splice('/')
-    for err in error_list:
-        if err.starts("Arithmetic_total_error"):
+
+    for err in errors.split('/'):
+        err = err.strip()
+        if not err:
+            continue
+        if err.startswith("Arithmetic_total_error") and len(scores) > 7:
             scores[7] = 0
-        else:
-            #get the number out of (line )
-            #scores[n] = 0
-    return scores
-            
-        
+            continue
+
+        match = re.search(r"line (\d+)", err)
+        if match:
+            line_number = int(match.group(1))
+            score_index = 7 + line_number  # line 1 begins at index 8
+            if score_index < len(scores):
+                scores[score_index] = 0
+
+    return invoice, scores

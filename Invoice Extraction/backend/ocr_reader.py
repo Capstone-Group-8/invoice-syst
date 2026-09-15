@@ -34,3 +34,26 @@ def extract_text(path):
         for item in results:
             words.append(item)
         return words
+
+
+def extract_text_with_confidence(path):
+    """Return OCR text and EasyOCR confidence for review/flagging."""
+    results_out = []
+
+    if path.lower().endswith(".pdf"):
+        doc = fitz.open(path)
+        for i, page in enumerate(doc):
+            pix = page.get_pixmap(dpi=300)
+            img_path = f"temp_page_{i}.png"
+            pix.save(img_path)
+            results = reader.readtext(img_path, detail=1)
+            for _box, text, confidence in results:
+                results_out.append({"text": text, "confidence": float(confidence)})
+            os.remove(img_path)
+        doc.close()
+    else:
+        results = reader.readtext(path, detail=1)
+        for _box, text, confidence in results:
+            results_out.append({"text": text, "confidence": float(confidence)})
+
+    return results_out
