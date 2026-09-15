@@ -119,18 +119,19 @@ def validate(invoice):
 7: TotalAmt
 8: line item 1
 9: line item 2...
-'''               
+'''
+''' this hasn't been tested
 def update_confidence_scores(invoice, scores):
     errors = validate(invoice)
-    if (errors = "200"):
+    if (errors == "200"):
         return invoice, scores
-    error_list = errors.splice('/')
+    error_list = errors.split('/')
     for err in error_list:
-        if err.starts("Arithmetic_total_error"):
+        if err.startswith("Arithmetic_total_error"):
             scores[7] = 0
         else:
             #get the number out of (line )
             #scores[n] = 0
     return scores
-            
+'''            
         
