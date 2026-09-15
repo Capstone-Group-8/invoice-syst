@@ -1,30 +1,47 @@
-from fastapi import FastAPI, Depends, HTTPException
-from sqlalchemy.orm import Session # in session.py
+import os
 
-from database import SessionLocal, engine
-import models
-import crud
-import uploader
-from schemas import Inventory, InventoryCreate, InventoryUpdate, Invoice, InvoiceCreate, InvoiceUpdate, InvoiceLineItem, InvoiceLineItemUpdate, InvoiceLineItemCreate, Supplier
-
-## add the following to solve CORE problem
+from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.orm import Session
+
+import crud
+import models
+from database import SessionLocal, engine
+from schemas import (
+    Inventory,
+    InventoryCreate,
+    InventoryUpdate,
+    Invoice,
+    InvoiceCreate,
+    InvoiceLineItem,
+    InvoiceLineItemCreate,
+    InvoiceLineItemUpdate,
+    InvoiceUpdate,
+    Supplier,
+)
 
 models.Base.metadata.create_all(bind=engine)
 
-app = FastAPI()
-## add the following to satisfy CORE
+app = FastAPI(title="Invoice Processing System API", version="0.1.0-alpha")
+
+origins = [
+    origin.strip()
+    for origin in os.getenv(
+        "FRONTEND_ORIGINS",
+        "http://localhost:5173,http://127.0.0.1:5173",
+    ).split(",")
+    if origin.strip()
+]
+
 app.add_middleware(
     CORSMiddleware,
-    #allow_origins=["*"],  # or ["http://localhost:8000"] for security
-    allow_origins=["http://localhost:8000"],  # for security
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 
-# Dependency: DB session per request
 def get_db():
     db = SessionLocal()
     try:
@@ -32,22 +49,26 @@ def get_db():
     finally:
         db.close()
 
-# -------------------------
-# RESTful CRUD Endpoints
-# -------------------------
+
+@app.get("/health")
+def health():
+    return {"status": "ok"}
+
 
 @app.get("/invoices/all", response_model=list[Invoice])
 def read_invoices(db: Session = Depends(get_db)):
     return crud.get_invoices(db)
 
+
 @app.get("/inventory", response_model=list[Inventory])
 def read_inventory(db: Session = Depends(get_db)):
     return crud.get_all_inventory(db)
 
+
 @app.get("/suppliers", response_model=list[Supplier])
 def read_suppliers(db: Session = Depends(get_db)):
     return crud.get_suppliers(db)
-#no use case to read list of line items outside invoice context
+
 
 @app.get("/invoices/{InvoiceNumber}", response_model=Invoice)
 def read_invoice(InvoiceNumber: str, db: Session = Depends(get_db)):
@@ -56,30 +77,27 @@ def read_invoice(InvoiceNumber: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="invoice not found")
     return invoice
 
+
 @app.get("/invoices/{InvoiceNumber}/lineitems", response_model=list[InvoiceLineItem])
 def read_invoice_items(InvoiceNumber: str, db: Session = Depends(get_db)):
-    line_items = crud.get_line_items(db, InvoiceNumber)
-    return line_items
-#need a function to read one line item/inventory entry?
-#no use case to read one supplier
+    return crud.get_line_items(db, InvoiceNumber)
 
-@app.get("/upload")
-def upload():
-    invoice_file = uploader.upload_invoice()
-    return uploader.push_initial_read(invoice_file)
 
-@app.post("/invoices/all", response_model=Invoice)
+@app.post("/invoices/all", response_model=Invoice, status_code=201)
 def create_new_invoice(invoice: InvoiceCreate, db: Session = Depends(get_db)):
     return crud.create_invoice(db, invoice)
 
-#is this also an http endpoint?
-def create_new_line_item(line_item: InvoiceLineItemCreate, db: Session = Depends(get_db)):
+
+@app.post("/invoices/{InvoiceNumber}/lineitems", response_model=InvoiceLineItem, status_code=201)
+def create_new_line_item(InvoiceNumber: str, line_item: InvoiceLineItemCreate, db: Session = Depends(get_db)):
+    if line_item.InvoiceNumber != InvoiceNumber:
+        raise HTTPException(status_code=400, detail="Invoice number does not match request path")
     return crud.create_line_item(db, line_item)
 
-@app.post("/inventory", response_model=Inventory)
+
+@app.post("/inventory", response_model=Inventory, status_code=201)
 def create_new_inventory_entry(entry: InventoryCreate, db: Session = Depends(get_db)):
     return crud.create_inventory_entry(db, entry)
-#no use case to create new supplier
 
 
 @app.put("/invoices/{InvoiceNumber}", response_model=Invoice)
@@ -89,25 +107,23 @@ def update_invoice(InvoiceNumber: str, invoice: InvoiceUpdate, db: Session = Dep
         raise HTTPException(status_code=404, detail="invoice not found")
     return updated
 
-@app.put("/lineitem/{InvoiceNumber}", response_model=InvoiceLineItem) #are you sure about that URL
-def update_line_item(InvoiceNumber: str, SuppliersID: str, line_item: InvoiceLineItemUpdate, db: Session = Depends(get_db)):
+
+@app.put("/lineitems/{InvoiceNumber}/{SuppliersID}", response_model=InvoiceLineItem)
+def update_line_item(
+    InvoiceNumber: str,
+    SuppliersID: str,
+    line_item: InvoiceLineItemUpdate,
+    db: Session = Depends(get_db),
+):
     updated = crud.update_line_item(db, InvoiceNumber, SuppliersID, line_item)
     if not updated:
         raise HTTPException(status_code=404, detail="line item not found")
     return updated
 
+
 @app.put("/inventory/{ProductID}", response_model=Inventory)
 def update_inventory(ProductID: str, inventory_entry: InventoryUpdate, db: Session = Depends(get_db)):
     updated = crud.update_inventory_entry(db, ProductID, inventory_entry)
     if not updated:
-        raise HTTPException(status_code=404, detail="Inventory entry not found")
+        raise HTTPException(status_code=404, detail="inventory entry not found")
     return updated
-#no use case to update supplier
-
-# @app.delete("/{item_type}/{ID}")
-# def delete_existing_item(ID: int, item_type: str, db: Session = Depends(get_db)):
-#     deleted = crud.delete_item(db, ID, item_type)
-#     if not deleted:
-#         raise HTTPException(status_code=404, detail="item not found")
-#     return {"message": "item deleted"}
-

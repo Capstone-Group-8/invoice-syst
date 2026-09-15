@@ -1,5 +1,6 @@
-from pydantic import BaseModel
 from datetime import date
+from pydantic import BaseModel
+
 
 class InventoryBase(BaseModel):
     SuppliersID: str
@@ -10,19 +11,19 @@ class InventoryBase(BaseModel):
     TotalQtyDesired: int
     Supplier: str
 
+
 class InventoryCreate(InventoryBase):
-    pass
+    ProductID: str
+
 
 class InventoryUpdate(InventoryBase):
     pass
 
+
 class Inventory(InventoryBase):
     ProductID: str
-    model_config = {
-        "from_attributes": True
-    }
+    model_config = {"from_attributes": True}
 
-##############################3
 
 class InvoiceLineItemBase(BaseModel):
     InvoiceNumber: str
@@ -32,19 +33,18 @@ class InvoiceLineItemBase(BaseModel):
     Rate: float
     Amount: float
 
+
 class InvoiceLineItemCreate(InvoiceLineItemBase):
     pass
+
 
 class InvoiceLineItemUpdate(InvoiceLineItemBase):
     pass
 
-class InvoiceLineItem(InvoiceLineItemBase):
-    #riskID: int hopefully this works w/out primary key
-    model_config = {
-        "from_attributes": True
-    }
 
-###########################3
+class InvoiceLineItem(InvoiceLineItemBase):
+    model_config = {"from_attributes": True}
+
 
 class InvoiceBase(BaseModel):
     OrderDate: date
@@ -54,37 +54,27 @@ class InvoiceBase(BaseModel):
     ShippingHandling: float
     TotalAmt: float
     Supplier: str
-    #File: ...
+
 
 class InvoiceCreate(InvoiceBase):
-    pass
+    InvoiceNumber: str
+
 
 class InvoiceUpdate(InvoiceBase):
     pass
 
+
 class Invoice(InvoiceBase):
     InvoiceNumber: str
-    model_config = {
-        "from_attributes": True
-    }
+    model_config = {"from_attributes": True}
 
 
-###############################
 class SupplierBase(BaseModel):
-    #SupplierName: str
-    ContactName: str
-    ContactEmail: str
-    ContactPhone: str
+    ContactName: str | None = None
+    ContactEmail: str | None = None
+    ContactPhone: str | None = None
 
-# class SupplierCreate(SupplierBase):
-#     pass
-#
-# class SupplierUpdate(SupplierBase):
-#     pass
 
 class Supplier(SupplierBase):
     SupplierName: str
-    model_config = {
-        "from_attributes": True
-    }
-    
+    model_config = {"from_attributes": True}

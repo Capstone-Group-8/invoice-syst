@@ -1,0 +1,12 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+.env
+capstone_group_8.db
+node_modules/
+frontend/node_modules/
+frontend/dist/
+temp_page_*.png
+.DS_Store
