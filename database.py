@@ -1,11 +1,13 @@
-from sqlalchemy import create_engine #in engine.create
-from sqlalchemy.orm import sessionmaker #can't find
-from sqlalchemy.orm import declarative_base #in decl_api
+import os
 
-DATABASE_URL = "mysql+mysqlconnector://mgs_user:pa55word@localhost/capstone_group_8"
+from sqlalchemy import create_engine
+from sqlalchemy.orm import declarative_base, sessionmaker
 
-engine = create_engine(DATABASE_URL)
+# Uses a local SQLite database by default so the Alpha can run without XAMPP.
+# To use MySQL instead, set DATABASE_URL in your local .env/environment.
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./capstone_group_8.db")
 
+connect_args = {"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {}
+engine = create_engine(DATABASE_URL, connect_args=connect_args)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
 Base = declarative_base()

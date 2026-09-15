@@ -1,28 +1,22 @@
-'''
-Created on Sep 4, 2026
+'''Planned upload/orchestration module.
 
-@author: Sally Little
+The original repository contained pseudocode in this .py file. The functions are
+kept as valid stubs so automated tests and tooling can import the project safely.
+OCR integration remains a team Alpha task.
 '''
-import validation
-import inventory_updater
-from inv import CompleteInvoice
+
 
 def upload_invoice():
-    pass
+    return None
+
 
 def use_ocr(payload):
-    pass
-    
+    raise NotImplementedError("OCR-to-main-API integration is still in progress")
+
 
 def push_initial_read(invoice_file):
-    payload, scores = use_ocr(invoice_file)
-    #creates new invoice called invoice using the payload.
-   calls (/invoices/all POST which calls) main.create_new_invoice once
-    calls (/invoices/{InvoiceNumber/lineitems POST which calls) main.create_new_line_item repeatedly with payload
-    scores = validation.update_confidence_scores(invoice, scores)
-    editInvoice(invoice.InvoiceNumber, order_date, ship_date, due_date, sales_no, invoice.shipping, invoice.total, supplier)
-    
+    raise NotImplementedError("Initial OCR persistence workflow is still in progress")
+
+
 def push_updated_read():
-    calls (/invoices/{InvoiceNumber} which calls) main.update_invoice, which calls crud.update_invoice,
-    calls main.update_line_item REPEATEDLY FOR ALL UPDATED LINE ITEMS. 
-    inventory_updater.update(payload)
+    raise NotImplementedError("Updated invoice persistence workflow is still in progress")
