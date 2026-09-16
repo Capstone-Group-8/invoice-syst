@@ -1,4 +1,5 @@
 import os
+import sys
 
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -6,6 +7,9 @@ from sqlalchemy.orm import Session
 
 import crud
 import models
+
+sys.path.insert(1, 'Invoice Extraction/backend')
+from parser_main import process_file
 from database import SessionLocal, engine
 from schemas import (
     Inventory,
@@ -35,7 +39,7 @@ origins = [
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins="*", #leave until I can get past the access-control-allow-origin error
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -48,6 +52,7 @@ def get_db():
         yield db
     finally:
         db.close()
+
 
 
 @app.get("/health")
@@ -99,6 +104,9 @@ def create_new_line_item(InvoiceNumber: str, line_item: InvoiceLineItemCreate, d
 def create_new_inventory_entry(entry: InventoryCreate, db: Session = Depends(get_db)):
     return crud.create_inventory_entry(db, entry)
 
+@app.post("/upload")
+def upload_file(file):
+    return process_file(file)
 
 @app.put("/invoices/{InvoiceNumber}", response_model=Invoice)
 def update_invoice(InvoiceNumber: str, invoice: InvoiceUpdate, db: Session = Depends(get_db)):
