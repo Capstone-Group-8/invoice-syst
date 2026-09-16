@@ -10,3 +10,5 @@ frontend/node_modules/
 frontend/dist/
 temp_page_*.png
 .DS_Store
+.Rhistory
+

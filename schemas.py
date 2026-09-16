@@ -47,13 +47,13 @@ class InvoiceLineItem(InvoiceLineItemBase):
 
 
 class InvoiceBase(BaseModel):
-    OrderDate: date
-    ShipDate: date
-    DueDate: date
-    SalesOrderNo: str
-    ShippingHandling: float
-    TotalAmt: float
-    Supplier: str
+    OrderDate: date | None = None
+    ShipDate: date | None = None
+    DueDate: date | None = None
+    SalesOrderNo: str | None = None
+    ShippingHandling: float | None = None
+    TotalAmt: float | None = None
+    Supplier: str | None = None
 
 
 class InvoiceCreate(InvoiceBase):

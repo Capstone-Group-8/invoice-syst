@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+//import { createRoot } from 'react-dom/client';
+
 
 const API = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8001";
 
@@ -7,6 +9,10 @@ function App() {
   const [selectedInvoice, setSelectedInvoice] = useState(null);
   const [lineItems, setLineItems] = useState([]);
   const [status, setStatus] = useState("Connecting to backend...");
+  const [editable, setEditable] = useState(false);
+  const [ stDueDate, setStDueDate ] = useState("");
+  const [ stSupplier, setStSupplier ] = useState("");
+  const [ stInvoiceNum, setStInvoiceNum ] = useState("");
 
   useEffect(() => {
     fetch(`${API}/invoices/all`)
@@ -21,17 +27,56 @@ function App() {
       .catch(() => setStatus("Frontend is working. Backend is not connected yet."));
   }, []);
 
-  async function viewInvoice(invoice) {
+  async function displayInvoice(invoice) {
     setSelectedInvoice(invoice);
     setLineItems([]);
     try {
       const response = await fetch(`${API}/invoices/${invoice.InvoiceNumber}/lineitems`);
       if (!response.ok) throw new Error();
       setLineItems(await response.json());
+      console.log(editable);
     } catch {
       setStatus("Invoice loaded, but line items could not be retrieved.");
     }
   }
+
+  function editInvoice(invoice) {
+    setStInvoiceNum(selectedInvoice.InvoiceNumber);
+    setStDueDate(selectedInvoice.DueDate);
+    setStSupplier(selectedInvoice.Supplier);
+    setEditable(true);
+    displayInvoice(invoice);
+
+  }
+
+  function viewInvoice(invoice) {
+    setEditable(false);
+    displayInvoice(invoice);
+  }
+
+  function update_form(e) {
+    e.preventDefault();
+
+    const invoice = {
+        //order_date: document.getElementById("order_date").value,
+        //ship_date: document.getElementById("ship_date").value,
+        due_date: stDueDate,
+        //sales_no: document.getElementById("sales_no").value,
+        //shipping: document.getElementById("shipping").value,
+        //total: document.getElementById("total").value,
+        supplier: stSupplier
+    };
+
+    fetch(`${API}/invoices/${stInvoiceNum}`, {
+        method: "PUT",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify(invoice)
+    })
+    .then(res => res.json())
+    .then(() => {
+        viewInvoice();
+    });
+}
 
   return (
     <main className="page">
@@ -39,11 +84,13 @@ function App() {
         <p className="eyebrow">Capstone Group 8</p>
         <h1>Invoice Processing System</h1>
         <p className="subtitle">Human-in-the-loop review of workplace invoice data.</p>
+        
       </header>
 
       {status && <div className="status">{status}</div>}
 
       <section className="panel">
+
         <h2>Invoices</h2>
         {invoices.length > 0 && (
           <div className="table-wrap">
@@ -65,7 +112,7 @@ function App() {
                     <td>{invoice.OrderDate}</td>
                     <td>${Number(invoice.TotalAmt).toFixed(2)}</td>
                     <td>
-                      <button onClick={() => viewInvoice(invoice)}>Review</button>
+                      <button onClick={() => viewInvoice(invoice)}>View</button> 
                     </td>
                   </tr>
                 ))}
@@ -75,12 +122,14 @@ function App() {
         )}
       </section>
 
-      {selectedInvoice && (
+      {selectedInvoice && !editable && (
         <section className="panel">
           <h2>Invoice {selectedInvoice.InvoiceNumber}</h2>
           <div className="summary-grid">
+            <button onClick={() => editInvoice(selectedInvoice)}>Edit</button>
             <span><strong>Supplier:</strong> {selectedInvoice.Supplier}</span>
             <span><strong>Due:</strong> {selectedInvoice.DueDate}</span>
+            {/*<span><strong>Shipping:</strong> ${Number(selectedInvoice.Shipping).toFixed(2)}</span>*/}
             <span><strong>Total:</strong> ${Number(selectedInvoice.TotalAmt).toFixed(2)}</span>
           </div>
           <h3>Line Items</h3>
@@ -99,6 +148,57 @@ function App() {
           )}
         </section>
       )}
+
+
+      {selectedInvoice && editable && (
+        <section className="panel">
+          <form name='form1' onSubmit={update_form}>
+          <div className="summary-grid">
+            {/*<span>
+              <label htmlFor="invoice_num">Invoice Number: </label> 
+              <input type="text" className="form-control" id="invoice_num" name = "invoice_num" defaultValue={selectedInvoice.InvoiceNumber} required></input>
+            </span>*/}
+            <span>
+              <label htmlFor="supplier">Supplier:</label> 
+              <input type="text" className="form_control" id="supplier" name="supplier" 
+              value={stSupplier} required 
+              onChange={(e) => setStSupplier(e.target.value)}/>
+            </span>
+            <span>
+              <label htmlFor="due_date">Due: </label>
+              <input type="date" className="form-control" id="due_date" name = "due_date" 
+              value={stDueDate} required
+              onChange={(e) => setStDueDate(e.target.value)}/>
+            </span>
+            {/*<span>
+              <label htmlFor="shipping">Shipping and Handling:</label>
+              <input type="number" className="form_control" id="shipping" name="shipping" defaultValue={selectedInvoice.Shipping} required></input>
+            </span>
+            <span>
+              <label htmlFor="total">Total:</label>
+              <input type="text" className="form_control" id="total" name="total" defaultValue={selectedInvoice.Total} required></input>
+    
+            </span>*/}
+          </div>
+          <input type="submit" />
+          </form>
+          <h3>Line Items</h3>
+          {lineItems.length === 0 ? (
+            <p>No line items available.</p>
+          ) : (
+            lineItems.map((item) => (
+              <div className="line-item" key={`${item.InvoiceNumber}-${item.SuppliersID}`}>
+                <div>
+                  <strong>{item.SuppliersDesc}</strong>
+                  <small>{item.SuppliersID}</small>
+                </div>
+                <span>{item.Quantity} × ${Number(item.Rate).toFixed(2)} = ${Number(item.Amount).toFixed(2)}</span>
+              </div>
+            ))
+          )}
+        </section>
+      )}
+      
     </main>
   );
 }
