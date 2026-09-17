@@ -10,9 +10,14 @@ function App() {
   const [lineItems, setLineItems] = useState([]);
   const [status, setStatus] = useState("Connecting to backend...");
   const [editable, setEditable] = useState(false);
-  const [ stDueDate, setStDueDate ] = useState("");
-  const [ stSupplier, setStSupplier ] = useState("");
-  const [ stInvoiceNum, setStInvoiceNum ] = useState("");
+  const [stDueDate, setStDueDate] = useState("");
+  const [stSupplier, setStSupplier] = useState("");
+  const [stInvoiceNum, setStInvoiceNum] = useState("");
+  const [stOrderDate, setStOrderDate] = useState("");
+  const [stShipDate, setStShipDate] = useState("");
+  const [stSalesOrderNo, setStSalesOrderNo ] = useState("");
+  const [stShipping, setStShipping] = useState("");
+  const [stTotalAmt, setStTotalAmt] = useState("");
 
   useEffect(() => {
     fetch(`${API}/invoices/all`)
@@ -29,12 +34,13 @@ function App() {
 
   async function displayInvoice(invoice) {
     setSelectedInvoice(invoice);
+    console.log(JSON.stringify(selectedInvoice));
     setLineItems([]);
     try {
       const response = await fetch(`${API}/invoices/${invoice.InvoiceNumber}/lineitems`);
       if (!response.ok) throw new Error();
       setLineItems(await response.json());
-      console.log(editable);
+      //console.log(editable);
     } catch {
       setStatus("Invoice loaded, but line items could not be retrieved.");
     }
@@ -44,6 +50,11 @@ function App() {
     setStInvoiceNum(selectedInvoice.InvoiceNumber);
     setStDueDate(selectedInvoice.DueDate);
     setStSupplier(selectedInvoice.Supplier);
+    setStOrderDate(selectedInvoice.OrderDate);
+    setStShipDate(selectedInvoice.ShipDate);
+    setStShipping(selectedInvoice.ShippingHandling);
+    setStSalesOrderNo(selectedInvoice.SalesOrderNo);
+    setStTotalAmt(selectedInvoice.TotalAmt);
     setEditable(true);
     displayInvoice(invoice);
 
@@ -58,23 +69,29 @@ function App() {
     e.preventDefault();
 
     const invoice = {
-        //order_date: document.getElementById("order_date").value,
-        //ship_date: document.getElementById("ship_date").value,
-        due_date: stDueDate,
-        //sales_no: document.getElementById("sales_no").value,
-        //shipping: document.getElementById("shipping").value,
-        //total: document.getElementById("total").value,
-        supplier: stSupplier
+        OrderDate: stOrderDate,
+        ShipDate: stShipDate,
+        DueDate: stDueDate,
+        SalesOrderNo: stSalesOrderNo,
+        ShippingHandling: stShipping,
+        TotalAmt: stTotalAmt,
+        Supplier: stSupplier
+    };
+    //console.log(JSON.stringify(invoice));
+
+    const requestOptions = {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*'
+      },
+      body: JSON.stringify(invoice)
     };
 
-    fetch(`${API}/invoices/${stInvoiceNum}`, {
-        method: "PUT",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify(invoice)
-    })
+    fetch(`${API}/invoices/${stInvoiceNum}`, requestOptions)
     .then(res => res.json())
     .then(() => {
-        viewInvoice();
+        window.location.reload(false);
     });
 }
 
@@ -125,11 +142,16 @@ function App() {
       {selectedInvoice && !editable && (
         <section className="panel">
           <h2>Invoice {selectedInvoice.InvoiceNumber}</h2>
+          <p><button onClick={() => editInvoice(selectedInvoice)}>Edit</button></p>
           <div className="summary-grid">
-            <button onClick={() => editInvoice(selectedInvoice)}>Edit</button>
             <span><strong>Supplier:</strong> {selectedInvoice.Supplier}</span>
+            <span><strong>Order Date: </strong> {selectedInvoice.OrderDate}</span>
+            <span><strong>Sales Order:</strong> {selectedInvoice.SalesOrderNo}</span>
             <span><strong>Due:</strong> {selectedInvoice.DueDate}</span>
-            {/*<span><strong>Shipping:</strong> ${Number(selectedInvoice.Shipping).toFixed(2)}</span>*/}
+            <span><strong>Shipped On:</strong> {selectedInvoice.ShipDate} </span>
+          </div>
+          <div className="summary-grid">
+            <span><strong>Shipping:</strong> ${Number(selectedInvoice.ShippingHandling).toFixed(2)}</span>
             <span><strong>Total:</strong> ${Number(selectedInvoice.TotalAmt).toFixed(2)}</span>
           </div>
           <h3>Line Items</h3>
@@ -165,20 +187,43 @@ function App() {
               onChange={(e) => setStSupplier(e.target.value)}/>
             </span>
             <span>
+              <label htmlFor="order_date">Order Date: </label>
+              <input type="date" className="form-control" id="order_date" name = "order_date" 
+              value={stOrderDate} required
+              onChange={(e) => setStOrderDate(e.target.value)}/>
+            </span>
+            <span>
+              <label htmlFor="sales_order">Sales Order: </label>
+              <input type="text" className="form-control" id="sales_order" name = "sales_order" 
+              value={stSalesOrderNo} required
+              onChange={(e) => setStSalesOrderNo(e.target.value)}/>
+            </span>
+            <span>
               <label htmlFor="due_date">Due: </label>
               <input type="date" className="form-control" id="due_date" name = "due_date" 
               value={stDueDate} required
               onChange={(e) => setStDueDate(e.target.value)}/>
             </span>
-            {/*<span>
+            <span>
+              <label htmlFor="ship_date">Shipped On: </label>
+              <input type="date" className="form-control" id="ship_date" name = "ship_date" 
+              value={stShipDate} required
+              onChange={(e) => setStShipDate(e.target.value)}/>
+            </span>
+          </div>
+          <div className="summary-grid">
+            <span>
               <label htmlFor="shipping">Shipping and Handling:</label>
-              <input type="number" className="form_control" id="shipping" name="shipping" defaultValue={selectedInvoice.Shipping} required></input>
+              <input type="number" className="form_control" id="shipping" name="shipping" step = "0.01" min="0"
+              value={stShipping} required
+                onChange={(e) => setStShipping(e.target.value)}/>   
             </span>
             <span>
               <label htmlFor="total">Total:</label>
-              <input type="text" className="form_control" id="total" name="total" defaultValue={selectedInvoice.Total} required></input>
-    
-            </span>*/}
+              <input type="number" className="form_control" id="total" name="total" step="0.01" min="0"
+              value={stTotalAmt} required
+              onChange={(e) => setStTotalAmt(e.target.value)}/>    
+            </span>
           </div>
           <input type="submit" />
           </form>
