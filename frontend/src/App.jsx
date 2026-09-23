@@ -10,6 +10,7 @@ function App() {
   const [lineItems, setLineItems] = useState([]);
   const [status, setStatus] = useState("Connecting to backend...");
   const [editable, setEditable] = useState(false);
+  
   const [stDueDate, setStDueDate] = useState("");
   const [stSupplier, setStSupplier] = useState("");
   const [stInvoiceNum, setStInvoiceNum] = useState("");
@@ -46,7 +47,7 @@ function App() {
     }
   }
 
-  function editInvoice(invoice) {
+  async function editInvoice(invoice) {
     setStInvoiceNum(selectedInvoice.InvoiceNumber);
     setStDueDate(selectedInvoice.DueDate);
     setStSupplier(selectedInvoice.Supplier);
@@ -60,12 +61,12 @@ function App() {
 
   }
 
-  function viewInvoice(invoice) {
+  async function viewInvoice(invoice) {
     setEditable(false);
     displayInvoice(invoice);
   }
 
-  function update_form(e) {
+  async function update_form(e) {
     e.preventDefault();
 
     const invoice = {

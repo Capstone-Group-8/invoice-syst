@@ -8,8 +8,8 @@ import os
 import shutil
 import time
 
-from invoice_parser import group_text, parse_invoice_fields
-from ocr_reader import extract_text
+from invoice_extraction.backend.invoice_parser import group_text, parse_invoice_fields
+from invoice_extraction.backend.ocr_reader import extract_text
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DROPBOX = os.path.join(BASE_DIR, "dropbox")
@@ -36,7 +36,7 @@ def file_is_ready(path):
     return size1 == size2
 
 
-def safe_move(src, dst, retries=5, delay=2):
+def safe_move(src: str, dst: str, retries=5, delay=2):
     """Try moving a file with retries if it's locked by another process."""
     for attempt in range(1, retries+1):
         try:
@@ -90,7 +90,7 @@ def process_file(path):
                 print(f"Moved locked file to errors: {error_path}")
             else:
                 print(f"ERROR: Could not move {base} even to errors")
-
+        return parsed
     except Exception as error:
         print(f"ERROR processing {base}: {error}")
         error_path = os.path.join(ERRORS, base)
@@ -111,6 +111,15 @@ def is_temp_file(name):
         return True
     return False
 
+def receive_file(filepath):
+    while not os.path.isfile(filepath) or not file_is_ready(filepath):
+        time.sleep(100)
+    name=os.path.basename(filepath)
+    
+    # if not name.lower().endswith(".pdf"):
+    #     raise Exception("Is not a PDF")    
+    # else:
+    return process_file(filepath)
 
 def watch_dropbox():
     print("Watching dropbox folder:", os.path.abspath(DROPBOX))

@@ -1,15 +1,18 @@
 import os
 import sys
+import aiofiles
 
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session 
+from pathlib import Path
 
 import crud
 import models
 
-sys.path.insert(1, 'Invoice Extraction/backend')
-from parser_main import process_file
+from invoice_extraction.backend.parser_main import process_file, DROPBOX
+import uploader
+import inventory_updater
 from database import SessionLocal, engine
 from schemas import (
     Inventory,
@@ -77,6 +80,7 @@ def read_suppliers(db: Session = Depends(get_db)):
 
 @app.get("/invoices/{InvoiceNumber}", response_model=Invoice)
 def read_invoice(InvoiceNumber: str, db: Session = Depends(get_db)):
+    #print(f"Fetching invoice using: {InvoiceNumber} calling crud.get_invoice from line 84 of main.py")
     invoice = crud.get_invoice(db, InvoiceNumber)
     if not invoice:
         raise HTTPException(status_code=404, detail="invoice not found")
@@ -87,6 +91,12 @@ def read_invoice(InvoiceNumber: str, db: Session = Depends(get_db)):
 def read_invoice_items(InvoiceNumber: str, db: Session = Depends(get_db)):
     return crud.get_line_items(db, InvoiceNumber)
 
+@app.get("/inventory/{ProductID}", response_model=Inventory)
+def read_inventory_entry(ProductID: str, db: Session = Depends(get_db)):
+    inventory_entry = crud.get_inventory_entry(db, ProductID)
+    if not inventory_entry:
+        raise HTTPException(status_code=404, detail="inventory entry not found")
+    return inventory_entry
 
 @app.post("/invoices/all", response_model=Invoice, status_code=201)
 def create_new_invoice(invoice: InvoiceCreate, db: Session = Depends(get_db)):
@@ -104,12 +114,12 @@ def create_new_line_item(InvoiceNumber: str, line_item: InvoiceLineItemCreate, d
 def create_new_inventory_entry(entry: InventoryCreate, db: Session = Depends(get_db)):
     return crud.create_inventory_entry(db, entry)
 
-@app.post("/upload")
-def upload_file(file):
-    return process_file(file)
+
+
 
 @app.put("/invoices/{InvoiceNumber}", response_model=Invoice)
 def update_invoice(InvoiceNumber: str, invoice: InvoiceUpdate, db: Session = Depends(get_db)):
+    #print(f"Updating invoice with InvoiceNumber: {InvoiceNumber} by calling crud.update_invoice from line 122 of main.py\n{invoice}")  # Debugging statement
     updated = crud.update_invoice(db, InvoiceNumber, invoice)
     if not updated:
         raise HTTPException(status_code=404, detail="invoice not found")
@@ -135,3 +145,48 @@ def update_inventory(ProductID: str, inventory_entry: InventoryUpdate, db: Sessi
     if not updated:
         raise HTTPException(status_code=404, detail="inventory entry not found")
     return updated
+
+def cache_inventory(db: Session = Depends(get_db)):
+    inventory = read_inventory(db)
+    d = dict()
+    product_ids = [0]
+    for item in inventory:
+        d[item.SuppliersID] = item
+        product_ids.append(int(item.ProductID))
+    return d, max(product_ids)
+
+@app.put("/fake/endpoint/for/testing")
+def handle_invoice(metadata, lineitems, confidence_intervals, db: Session = Depends(get_db), test_toggle=False):
+    create_new_invoice(metadata, db)
+    for item in lineitems:
+        create_new_line_item(metadata.InvoiceNumber, item, db)
+    #cause react to open the form updater
+    #pass forward the confidence intervals
+    #retrieve the changes
+    #update_invoice
+    #update line_items
+    if test_toggle:
+        new_lineitems = lineitems #to enable testing to still work without actual updates
+    inventory, current_max = cache_inventory(db)
+    updated_items, new_items = inventory_updater.update(inventory, current_max, new_lineitems, metadata.Supplier)
+    for productID, item in updated_items:
+        update_inventory(productID, item, db)
+    for item in new_items:
+        create_new_inventory_entry(item, db)
+
+
+@app.post("/upload")
+#https://medium.com/@ThinkingLoop/fastapi-file-uploads-clean-fast-and-foolproof-4ecf0f00404f
+async def upload_file(file: UploadFile):
+    name = file.filename
+    target = os.path.join(DROPBOX,name) # pyright: ignore[reportCallIssue, reportArgumentType]
+    if file.content_type not in {"application/pdf"}:
+        raise HTTPException(415, "Unsupported file type")
+    else:
+        async with aiofiles.open(target, "wb") as out:
+            while chunk := await file.read(1024 * 1024):
+                await out.write(chunk)
+        #return {"stored_as": str(target)}
+    metadata, lineitems, confidence_intervals = uploader.use_ocr(target)
+    return handle_invoice(metadata, lineitems, confidence_intervals)    
+    
