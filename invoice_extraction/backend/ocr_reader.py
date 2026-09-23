@@ -8,6 +8,7 @@ import tempfile
 
 import easyocr
 import fitz
+#uvicorn says to use import pymupdf instead of fitz, somebody plz test that
 import numpy as np
 from PIL import Image
 
@@ -19,7 +20,7 @@ os.makedirs(TEMP_DIR, exist_ok=True)
 reader = easyocr.Reader(["en"], gpu=False)
 
 
-def process_ocr_results(ocr_results, page_number):
+def process_ocr_results(ocr_results, page_number:int):
     results = []
     for bounding_box, text, confidence in ocr_results:
         x = min(point[0] for point in bounding_box)
@@ -39,7 +40,7 @@ def process_ocr_results(ocr_results, page_number):
     return results
 
 
-def extract_text(path):
+def extract_text(path: str):
     results = []
 
     if path.lower().endswith(".pdf"):

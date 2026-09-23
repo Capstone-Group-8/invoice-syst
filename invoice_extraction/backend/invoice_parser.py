@@ -413,7 +413,7 @@ def parse_line_items(rows):
         end = anchors[pos + 1][0] if pos + 1 < len(anchors) else len(rows)
         item_rows = rows[start:end]
         suppliers_id = compact_text(product_item["text"])
-        quantity = None
++        quantity = -1 #this can't start as None if you're going to make it an int later
         quantity_candidates = []
         for item in rows[start]:
             if item is product_item:
@@ -425,7 +425,8 @@ def parse_line_items(rows):
                 quantity_candidates.append((product_item["x"] - item["x"], item))
         if quantity_candidates:
             _, quantity_item = min(quantity_candidates, key=lambda c: c[0])
-            quantity = int(parse_number(quantity_item["text"]))
+            if quantity_item.get("text"):
+                quantity = parse_number(quantity_item["text"])
 
         fields = find_fields_in_item(item_rows, product_item)
         description = build_description(item_rows, product_item, fields)
@@ -459,13 +460,13 @@ def parse_line_items(rows):
 
 def parse_invoice_metadata(rows):
     metadata = {
-        "InvoiceNumber": None,
+        "InvoiceNumber": "",
         "OrderDate": None,
         "ShipDate": None,
         "DueDate": None,
-        "ShippingHandling": None,
-        "TotalAmt": None,
-        "Supplier": None,
+        "ShippingHandling": -0.1,
+        "TotalAmt": -0.1,
+        "Supplier": "",
     }
 
     for row in rows:
