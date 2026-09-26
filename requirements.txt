@@ -11,4 +11,4 @@ Pillow
 opencv-python
 numpy
 aiofiles
-dateutil
+python-dateutil
