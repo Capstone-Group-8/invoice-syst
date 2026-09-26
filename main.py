@@ -1,11 +1,10 @@
 import os
-import sys
 import aiofiles
 
 from fastapi import Depends, FastAPI, HTTPException, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session 
-from pathlib import Path
+#from pathlib import Path
 
 import crud
 import models
@@ -177,7 +176,7 @@ def handle_invoice(metadata, lineitems, confidence_intervals, db: Session = Depe
 
 @app.post("/upload")
 #https://medium.com/@ThinkingLoop/fastapi-file-uploads-clean-fast-and-foolproof-4ecf0f00404f
-async def upload_file(file: UploadFile):
+async def upload_file(file: UploadFile, db: Session = Depends(get_db)):
     name = file.filename
     target = os.path.join(DROPBOX,name) # pyright: ignore[reportCallIssue, reportArgumentType]
     if file.content_type not in {"application/pdf"}:
@@ -188,5 +187,5 @@ async def upload_file(file: UploadFile):
                 await out.write(chunk)
         #return {"stored_as": str(target)}
     metadata, lineitems, confidence_intervals = uploader.use_ocr(target)
-    return handle_invoice(metadata, lineitems, confidence_intervals)    
+    return handle_invoice(metadata, lineitems, confidence_intervals, db)    
     

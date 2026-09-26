@@ -10,3 +10,4 @@ PyMuPDF
 Pillow
 opencv-python
 numpy
+aiofiles
