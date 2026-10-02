@@ -1,15 +1,15 @@
-from datetime import date
+from datetime import date, time
 from pydantic import BaseModel
 
 
 class InventoryBase(BaseModel):
-    SuppliersID: str
+    SuppliersID: str | None = None
     Description: str
     ProductType: str
     QtyOnHand: int
-    LastPrice: float
-    TotalQtyDesired: int
-    Supplier: str
+    LastPrice: float | None = None
+    TotalQtyDesired: int | None = None
+    Supplier: str | None = None
 
 
 class InventoryCreate(InventoryBase):
@@ -72,4 +72,21 @@ class SupplierBase(BaseModel):
 
 class Supplier(SupplierBase):
     SupplierName: str
+    model_config = {"from_attributes": True}
+
+
+
+class ChangeLogBase(BaseModel):
+    InvoiceID: str
+    FieldChanged: str
+    OldValue: str
+    NewValue: str
+    Author: str | None = None
+    Timestamp: time | None = None
+
+class ChangeLogCreate(ChangeLogBase):
+    pass
+
+class ChangeLog(ChangeLogBase):
+    ChangeID: int
     model_config = {"from_attributes": True}

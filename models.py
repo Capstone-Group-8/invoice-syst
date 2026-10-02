@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, Date
+from sqlalchemy import Column, Integer, String, Float, Date, Time
 from database import Base
 
 class Inventory(Base):
@@ -43,3 +43,14 @@ class Supplier(Base):
     ContactName = Column(String(50), nullable=True)
     ContactEmail = Column(String(50), nullable=True)
     ContactPhone = Column(String(15), nullable=True)
+
+class ChangeLog(Base):
+    __tablename__ = "Changes"
+
+    InvoiceID = Column(String(50), nullable=False)
+    FieldChanged = Column(String(20), nullable=False)
+    OldValue  = Column(String(50), nullable=False)
+    NewValue = Column(String(50), nullable=False)
+    Author = Column(String(120), nullable=True)
+    Timestamp = Column(Time, nullable=True)
+    ChangeID = Column(Integer, autoincrement= "auto", nullable=False, primary_key=True, index=True)
