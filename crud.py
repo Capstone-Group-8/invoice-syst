@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session # pyright: ignore[reportMissingImports]
 import sqlite3
-from models import Inventory, InvoiceLineItem, Invoice, Supplier
+from models import Inventory, InvoiceLineItem, Invoice, Supplier, ChangeLog
 from schemas import (
     InventoryCreate,
     InventoryUpdate,
@@ -8,6 +8,7 @@ from schemas import (
     InvoiceLineItemUpdate,
     InvoiceCreate,
     InvoiceUpdate,
+    ChangeLogCreate
 )
 
 #Inventory
@@ -152,3 +153,29 @@ def get_suppliers(db: Session):
 
 def get_supplier(db: Session, SupplierName: str):
     return db.query(Supplier).filter(Supplier.SupplierName == SupplierName).first()
+
+#ChangeLog
+
+def get_all_changes(db: Session):
+    return db.query(ChangeLog).all()
+
+def get_invoice_changes(db: Session, InvoiceNumber: int):
+    return db.query(ChangeLog).filter(ChangeLog.InvoiceID == InvoiceNumber).all()
+
+def get_change(db: Session, ChangeID: int):
+    return db.query(ChangeLog).filter(ChangeLog.ChangeID == ChangeID).first()
+
+def create_change(db: Session, passed_item: ChangeLogCreate):
+    db_change = ChangeLog(**passed_item.model_dump()) 
+    db.add(db_change)
+    db.commit()
+    db.refresh(db_change)
+    return db_change
+
+def delete_change(db: Session, ChangeID: int):
+    #Not used in production but useful for testing
+    db_change = get_change(db, ChangeID)
+    if db_change:
+        db.delete(db_change)
+        db.commit()
+    return db_change

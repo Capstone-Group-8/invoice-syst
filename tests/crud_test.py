@@ -119,6 +119,58 @@ def test_update_invoice():
     assert getattr(updated_invoice, "ShippingHandling") == 20.99, "Shipping amount was not updated"
     assert getattr(updated_invoice, "TotalAmt") == 120.10, "Total amount was not updated"
 
+def test_create_and_read_change():
+    main.create_change(
+        main.ChangeLogCreate(
+            InvoiceID="INV-DEMO-02",
+            FieldChanged="OrderDate",
+            OldValue="2026-09-03",
+            NewValue="2026-09-05",
+            Author="Test User",
+        ),
+        db,
+    )
+    main.create_change(
+        main.ChangeLogCreate(
+            InvoiceID="INV-DEMO-02",
+            FieldChanged="SalesOrderNo",
+            OldValue="SO-DEMO-02",
+            NewValue="SO-DEMO-03",
+        ),
+        db,
+    )
+    change_logs = main.read_invoice_changes("INV-DEMO-02", db)
+    assert len(change_logs) == 2, "Number of change logs does not match"
+    all_change_logs = main.read_all_changes(db)
+    assert len(all_change_logs) >= 2, "Number of all change logs does not match"
+    assert change_logs == all_change_logs, "change logs do not match"
+    first_change = change_logs[0]
+    second_change = change_logs[1]
+    assert first_change.InvoiceID == "INV-DEMO-02", "Invoice ID does not match"
+    assert first_change.FieldChanged == "OrderDate", "Field changed does not match"
+    assert first_change.OldValue == "2026-09-03", "Old value does not match"
+    assert first_change.NewValue == "2026-09-05", "New value does not match"
+    assert first_change.Author == "Test User", "Author does not match"
+    assert second_change.InvoiceID == "INV-DEMO-02", "Invoice ID does not match"
+    assert second_change.FieldChanged == "SalesOrderNo", "Field changed does not match"
+    assert second_change.OldValue == "SO-DEMO-02", "Old value does not match"
+    assert second_change.NewValue == "SO-DEMO-03", "New value does not match"
+    first_changeid = first_change.ChangeID
+    second_changeid = second_change.ChangeID
+    first_change_from_db = main.read_change(first_changeid, db)
+    second_change_from_db = main.read_change(second_changeid, db)
+    assert first_change_from_db.InvoiceID == "INV-DEMO-02", "Invoice ID does not match"
+    assert first_change_from_db.FieldChanged == "OrderDate", "Field changed does not match"
+    assert first_change_from_db.OldValue == "2026-09-03", "Old value does not match"
+    assert first_change_from_db.NewValue == "2026-09-05", "New value does not match"
+    assert first_change_from_db.Author == "Test User", "Author does not match"
+    assert second_change_from_db.InvoiceID == "INV-DEMO-02", "Invoice ID does not match"
+    assert second_change_from_db.FieldChanged == "SalesOrderNo", "Field changed does not match"
+    assert second_change_from_db.OldValue == "SO-DEMO-02", "Old value does not match"
+    assert second_change_from_db.NewValue == "SO-DEMO-03", "New value does not match"
+    main.crud.delete_change(db, first_changeid)
+    main.crud.delete_change(db, second_changeid)
+
 def test_update_line_item():
     main.update_line_item(
         "INV-DEMO-01",
@@ -140,6 +192,9 @@ def test_update_line_item():
     assert getattr(updated_line_items[1], "Amount") == 180.90, "Amount was not updated" 
     #main.crud.delete_line_item(db, "INV-DEMO-02", "000100-0030-F-FULL")
     main.crud.delete_invoice(db, "INV-DEMO-02")
+
+#def test_create_change_lineitem():
+ #   main.create
 
 #Inventory
 def test_create_new_inventory_item():
@@ -183,7 +238,7 @@ def test_update_inventory():
             TotalQtyDesired = 4,
             Supplier = "Mountain Glass Co."
         ),
-        db,
+        db
     )
     updated_item = main.read_inventory_entry("80026", db)
     assert getattr(updated_item, "SuppliersID") == "00125-0030-F-FULL", "Supplier ID was not updated"
@@ -198,6 +253,8 @@ def test_update_inventory():
 def test_read_suppliers():
     suppliers = main.read_suppliers(db)
     assert len(suppliers) > 0
+
+
 
     
 """ 
@@ -275,8 +332,8 @@ def test_handle_invoice():
             Rate=12.42,
             Amount=12.42,
     )
-    main.handle_invoice(invoice, [item1, item2, item3], [(0.95, 0.90), (0.42, 0.48), (0.85, 0.80)], db, test_toggle=True)
-
+    main.handle_invoice(invoice, [item1, item2, item3], [(0.95, 0.90), (0.42, 0.48), (0.85, 0.80)], db)
+    main.update_all_inventory([item1, item2, item3], invoice.Supplier, db, test_toggle=True)
     new_invoice = main.read_invoice("INV-DEMO-06", db)
     line_items = main.read_invoice_items("INV-DEMO-06", db)
     #invoice has been added
@@ -319,8 +376,8 @@ def test_handle_invoice():
     assert updated_item.LastPrice == 61.32, "Last price was not updated"
     assert updated_item.TotalQtyDesired == 4, "Total quantity desired does not match"
     assert updated_item.Supplier == "Bullseye Glass Co.", "Supplier name does not match"
-
-    #clean up
+   
+     #clean up
     main.crud.delete_line_item(db, "INV-DEMO-06", "000100-0030-F-FULL")
     main.crud.delete_line_item(db, "INV-DEMO-06", "000100-0031-F-FULL")
     main.crud.delete_line_item(db, "INV-DEMO-06", "055513-0001-F-P001")
@@ -335,6 +392,7 @@ if __name__ == "__main__":
     test_create_new_invoice()
     test_create_new_line_item()
     test_update_invoice()
+    test_create_and_read_change()
     test_update_line_item()
     test_create_new_inventory_item()
     test_read_inventory()

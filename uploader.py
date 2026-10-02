@@ -5,7 +5,7 @@ Created on Sep 4, 2026
 '''
 import validation
 import inventory_updater
-from inv import CompleteInvoice
+from inv import CompleteInvoice, InvoiceLine
 import invoice_extraction.backend.parser_main as parser_main
 from datetime import date
 from dateutil.parser import parse
@@ -16,10 +16,16 @@ from schemas import (
     InvoiceUpdate,
 )
 
-def upload_invoice():
-    pass
+def upload(target_path): # -> tuple[InvoiceCreate, list[InvoiceLineItemCreate], list[tuple[float, float]]]:
+    metadata, lineitems, confidences, validatable_invoice = use_ocr(target_path)
+    result = validation.validate(validatable_invoice)
+    if result == "200":
+        return metadata, lineitems, confidences
+    else:
+        pass #parse errors and pass all back to front end
 
-def use_ocr(filepath):# -> tuple[InvoiceCreate, list[InvoiceLineItemCreate], list[tuple[float, float]]]:
+
+def use_ocr(filepath):# -> tuple[InvoiceCreate, list[InvoiceLineItemCreate], list[tuple[float, float]], CompleteInvoice]:
     """
     This is the connector to the OCR module. It is the only function that is tightly coupled with the same.
     """
@@ -51,16 +57,20 @@ def use_ocr(filepath):# -> tuple[InvoiceCreate, list[InvoiceLineItemCreate], lis
     """
     
     metadata = payload.Invoice # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
+    InvoiceNumber=metadata.InvoiceNumber
+    ShippingHandling=metadata.ShippingHandling
+    TotalAmt=metadata.TotalAmt
     invoice = InvoiceCreate(
-        InvoiceNumber=metadata.InvoiceNumber,
+        InvoiceNumber=InvoiceNumber,
         OrderDate=parse(metadata.OrderDate).date(),
         ShipDate=parse(metadata.ShipDate).date(),
         DueDate=parse(metadata.DueDate).date(),
         SalesOrderNo=metadata.SalesOrderNo,
-        ShippingHandling=metadata.ShippingHandling,
-        TotalAmt=metadata.TotalAmt,
+        ShippingHandling=ShippingHandling,
+        TotalAmt=TotalAmt,
         Supplier=metadata.Supplier
     )
+    validatable_invoice = CompleteInvoice(InvoiceNumber, ShippingHandling, TotalAmt)
     new_invoice_line_items = []
     confidence_intervals = []
     for item in payload.InvoiceLineItems: # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
@@ -72,9 +82,11 @@ def use_ocr(filepath):# -> tuple[InvoiceCreate, list[InvoiceLineItemCreate], lis
             Rate= item.Rate,
             Amount=item.Amount,
         )
+        new_validatable_item = InvoiceLine(item.Quantity, item.SuppliersID, item.SuppliersDesc, item.Rate, item.Amount)
+        validatable_invoice.add_line_item(new_validatable_item)
         new_invoice_line_items.append(new_item)
         confidence_intervals.append((item.OCRConfidence, item.Confidence))
-    return invoice, new_invoice_line_items, confidence_intervals
+    return invoice, new_invoice_line_items, confidence_intervals, validatable_invoice
 
 
 

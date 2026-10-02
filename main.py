@@ -24,6 +24,8 @@ from schemas import (
     InvoiceLineItemUpdate,
     InvoiceUpdate,
     Supplier,
+    ChangeLog,
+    ChangeLogCreate,
 )
 
 models.Base.metadata.create_all(bind=engine)
@@ -56,25 +58,26 @@ def get_db():
         db.close()
 
 
-
+# GET
 @app.get("/health")
 def health():
     return {"status": "ok"}
-
 
 @app.get("/invoices/all", response_model=list[Invoice])
 def read_invoices(db: Session = Depends(get_db)):
     return crud.get_invoices(db)
 
-
 @app.get("/inventory", response_model=list[Inventory])
 def read_inventory(db: Session = Depends(get_db)):
     return crud.get_all_inventory(db)
 
-
 @app.get("/suppliers", response_model=list[Supplier])
 def read_suppliers(db: Session = Depends(get_db)):
     return crud.get_suppliers(db)
+
+@app.get("/changes", response_model=list[ChangeLog])
+def read_all_changes(db: Session = Depends(get_db)):
+    return crud.get_all_changes(db)
 
 
 @app.get("/invoices/{InvoiceNumber}", response_model=Invoice)
@@ -84,7 +87,6 @@ def read_invoice(InvoiceNumber: str, db: Session = Depends(get_db)):
     if not invoice:
         raise HTTPException(status_code=404, detail="invoice not found")
     return invoice
-
 
 @app.get("/invoices/{InvoiceNumber}/lineitems", response_model=list[InvoiceLineItem])
 def read_invoice_items(InvoiceNumber: str, db: Session = Depends(get_db)):
@@ -97,10 +99,19 @@ def read_inventory_entry(ProductID: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="inventory entry not found")
     return inventory_entry
 
+@app.get("/invoices/{InvoiceNumber}/changes", response_model=list[ChangeLog])
+def read_invoice_changes(InvoiceNumber: str, db: Session = Depends(get_db)):
+    return crud.get_invoice_changes(db, InvoiceNumber)
+
+@app.get("/invoices/{InvoiceNumber}/changes/{ChangeID}", response_model=ChangeLog)
+def read_change(ChangeID: int, db: Session = Depends(get_db)):
+    return crud.get_change(db, ChangeID)
+
+
+#POST
 @app.post("/invoices/all", response_model=Invoice, status_code=201)
 def create_new_invoice(invoice: InvoiceCreate, db: Session = Depends(get_db)):
     return crud.create_invoice(db, invoice)
-
 
 @app.post("/invoices/{InvoiceNumber}/lineitems", response_model=InvoiceLineItem, status_code=201)
 def create_new_line_item(InvoiceNumber: str, line_item: InvoiceLineItemCreate, db: Session = Depends(get_db)):
@@ -108,14 +119,16 @@ def create_new_line_item(InvoiceNumber: str, line_item: InvoiceLineItemCreate, d
         raise HTTPException(status_code=400, detail="Invoice number does not match request path")
     return crud.create_line_item(db, line_item)
 
-
 @app.post("/inventory", response_model=Inventory, status_code=201)
 def create_new_inventory_entry(entry: InventoryCreate, db: Session = Depends(get_db)):
     return crud.create_inventory_entry(db, entry)
 
+@app.post("/invoices/{InvoiceNumber}/changes", response_model=ChangeLog, status_code=201)
+def create_change(change: ChangeLogCreate, db: Session = Depends(get_db)):
+    return crud.create_change(db, change)
 
 
-
+#PUT
 @app.put("/invoices/{InvoiceNumber}", response_model=Invoice)
 def update_invoice(InvoiceNumber: str, invoice: InvoiceUpdate, db: Session = Depends(get_db)):
     #print(f"Updating invoice with InvoiceNumber: {InvoiceNumber} by calling crud.update_invoice from line 122 of main.py\n{invoice}")  # Debugging statement
@@ -123,7 +136,6 @@ def update_invoice(InvoiceNumber: str, invoice: InvoiceUpdate, db: Session = Dep
     if not updated:
         raise HTTPException(status_code=404, detail="invoice not found")
     return updated
-
 
 @app.put("/lineitems/{InvoiceNumber}/{SuppliersID}", response_model=InvoiceLineItem)
 def update_line_item(
@@ -137,13 +149,13 @@ def update_line_item(
         raise HTTPException(status_code=404, detail="line item not found")
     return updated
 
-
 @app.put("/inventory/{ProductID}", response_model=Inventory)
 def update_inventory(ProductID: str, inventory_entry: InventoryUpdate, db: Session = Depends(get_db)):
     updated = crud.update_inventory_entry(db, ProductID, inventory_entry)
     if not updated:
         raise HTTPException(status_code=404, detail="inventory entry not found")
     return updated
+
 
 def cache_inventory(db: Session = Depends(get_db)):
     inventory = read_inventory(db)
@@ -154,20 +166,25 @@ def cache_inventory(db: Session = Depends(get_db)):
         product_ids.append(int(item.ProductID))
     return d, max(product_ids)
 
-@app.put("/fake/endpoint/for/testing")
-def handle_invoice(metadata, lineitems, confidence_intervals, db: Session = Depends(get_db), test_toggle=False):
+def handle_invoice(metadata: InvoiceCreate, lineitems: list[InvoiceLineItemCreate], confidence_intervals: list[tuple[float, float]], db: Session = Depends(get_db)):
+    # -> JSON object{InvoiceCreate, list[InvoiceLineItemCreate], list[tuple[float, float]]}:
     create_new_invoice(metadata, db)
     for item in lineitems:
         create_new_line_item(metadata.InvoiceNumber, item, db)
+    return ({"metadata": metadata,
+             "lineitems": lineitems,
+             "confidence_intervals": confidence_intervals})
     #cause react to open the form updater
     #pass forward the confidence intervals
     #retrieve the changes
     #update_invoice
     #update line_items
+@app.post("/update_inventory")
+def update_all_inventory(lineitems: list[InvoiceLineItemCreate], Supplier: str, db: Session = Depends(get_db), test_toggle=False):
     if test_toggle:
         new_lineitems = lineitems #to enable testing to still work without actual updates
     inventory, current_max = cache_inventory(db)
-    updated_items, new_items = inventory_updater.update(inventory, current_max, new_lineitems, metadata.Supplier)
+    updated_items, new_items = inventory_updater.update(inventory, current_max, new_lineitems, Supplier)
     for productID, item in updated_items:
         update_inventory(productID, item, db)
     for item in new_items:
@@ -176,7 +193,8 @@ def handle_invoice(metadata, lineitems, confidence_intervals, db: Session = Depe
 
 @app.post("/upload")
 #https://medium.com/@ThinkingLoop/fastapi-file-uploads-clean-fast-and-foolproof-4ecf0f00404f
-async def upload_file(file: UploadFile, db: Session = Depends(get_db)):
+async def upload_file(file: UploadFile, db: Session = Depends(get_db)): 
+    # -> handle_invoice(tuple[InvoiceCreate, list[InvoiceLineItemCreate], list[tuple[float, float]]], Session)
     name = file.filename
     target = os.path.join(DROPBOX,name) # pyright: ignore[reportCallIssue, reportArgumentType]
     if file.content_type not in {"application/pdf"}:
@@ -186,6 +204,6 @@ async def upload_file(file: UploadFile, db: Session = Depends(get_db)):
             while chunk := await file.read(1024 * 1024):
                 await out.write(chunk)
         #return {"stored_as": str(target)}
-    metadata, lineitems, confidence_intervals = uploader.use_ocr(target)
+    metadata, lineitems, confidence_intervals = uploader.upload(target)
     return handle_invoice(metadata, lineitems, confidence_intervals, db)    
     
