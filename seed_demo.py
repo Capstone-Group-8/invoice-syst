@@ -92,6 +92,7 @@ def seed():
                     SuppliersDesc="Opaque White Opal Fine Frit 1 lb jar",
                     Rate=12.42,
                     Amount=12.42,
+                    LineCount = 1,
                 ),
                 models.InvoiceLineItem(
                     InvoiceNumber="INV-DEMO-01",
@@ -100,6 +101,7 @@ def seed():
                     SuppliersDesc="Red Full Double-Rolled",
                     Rate=55.83,
                     Amount=55.83,
+                    LineCount = 2,
                 ),
             ]
         )

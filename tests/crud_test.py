@@ -44,10 +44,13 @@ def test_read_invoice_items():
     assert getattr(line_items[0], "SuppliersDesc") == "Opaque White Opal Fine Frit 1 lb jar", "Supplier description does not match"
     assert getattr(line_items[0], "Rate") == 12.42, "Rate does not match"
     assert getattr(line_items[0], "Amount") == 12.42, "Amount does not match"
+    assert getattr(line_items[0], "LineCount") == 1, "Line count does not match"
+
     assert getattr(line_items[1], "SuppliersID") == "000124-0030-F-FULL", "Supplier ID does not match"
     assert getattr(line_items[1], "SuppliersDesc") == "Red Full Double-Rolled", "Supplier description does not match"
     assert getattr(line_items[1], "Rate") == 55.83, "Rate does not match"
     assert getattr(line_items[1], "Amount") == 55.83, "Amount does not match"
+    assert getattr(line_items[1], "LineCount") == 2, "Line count does not match"
 
 
 def test_create_new_invoice():
@@ -87,6 +90,7 @@ def test_create_new_line_item():
             SuppliersDesc="Black Full Double-Rolled",
             Rate=55.83,
             Amount=111.66,
+            LineCount =1,
         ),
         db,
     )
@@ -95,7 +99,7 @@ def test_create_new_line_item():
     assert getattr(line_items[0], "SuppliersDesc") == "Black Full Double-Rolled", "Supplier description does not match"
     assert getattr(line_items[0], "Rate") == 55.83, "Rate does not match"
     assert getattr(line_items[0], "Amount") == 111.66, "Amount does not match"
-
+    assert getattr(line_items[0], "LineCount") == 1, "LineCount does not match"
 
 def test_update_invoice():
     main.update_invoice(
@@ -182,6 +186,7 @@ def test_update_line_item():
             SuppliersDesc="Tangerine Full Double-Rolled Updated",
             Rate=60.58,
             Amount=180.90,
+            LineCount=2,
         ),
         db,
     )
@@ -189,7 +194,8 @@ def test_update_line_item():
     assert getattr(updated_line_items[1], "Quantity") == 3, "Quantity was not updated"
     assert getattr(updated_line_items[1], "SuppliersDesc") == "Tangerine Full Double-Rolled Updated", "Supplier description was not updated"
     assert getattr(updated_line_items[1], "Rate") == 60.58, "Rate was not updated"
-    assert getattr(updated_line_items[1], "Amount") == 180.90, "Amount was not updated" 
+    assert getattr(updated_line_items[1], "Amount") == 180.90, "Amount was not updated"
+    assert getattr(updated_line_items[1], "LineCount") == 2, "Line count did not remain 2"
     #main.crud.delete_line_item(db, "INV-DEMO-02", "000100-0030-F-FULL")
     main.crud.delete_invoice(db, "INV-DEMO-02")
 
@@ -315,6 +321,7 @@ def test_handle_invoice():
             SuppliersDesc="Black Full Double-Rolled",
             Rate=61.32,
             Amount=122.64,
+            LineCount = 1,
         )
     item2 = main.InvoiceLineItemCreate(
             InvoiceNumber="INV-DEMO-06",
@@ -323,6 +330,7 @@ def test_handle_invoice():
             SuppliersDesc="Black Irid Rainbow Full Double-Rolled",
             Rate=61.32,
             Amount=61.32,
+            LineCount = 2,
         )
     item3 = main.InvoiceLineItemCreate(
             InvoiceNumber="INV-DEMO-06",
@@ -331,6 +339,7 @@ def test_handle_invoice():
             SuppliersDesc="Totally Fake Fine Frit 1 lb jar",
             Rate=12.42,
             Amount=12.42,
+            LineCount = 3,
     )
     main.handle_invoice(invoice, [item1, item2, item3], [(0.95, 0.90), (0.42, 0.48), (0.85, 0.80)], db)
     main.update_all_inventory([item1, item2, item3], invoice.Supplier, db, test_toggle=True)
@@ -349,14 +358,17 @@ def test_handle_invoice():
     assert line_items[0].SuppliersDesc == "Black Full Double-Rolled", "Supplier description does not match"
     assert line_items[0].Rate == 61.32, "Rate does not match"
     assert line_items[0].Amount == 122.64, "Amount does not match"
+    assert line_items[0].LineCount ==1, "Count does not match"
     assert line_items[1].SuppliersID == "000100-0031-F-FULL", "Supplier ID does not match"
     assert line_items[1].SuppliersDesc == "Black Irid Rainbow Full Double-Rolled", "Supplier description does not match"
     assert line_items[1].Rate == 61.32, "Rate does not match"
     assert line_items[1].Amount == 61.32, "Amount does not match"
+    assert line_items[1].LineCount == 2, "Count does not match"
     assert line_items[2].SuppliersID == "055513-0001-F-P001", "Supplier ID does not match"
     assert line_items[2].SuppliersDesc == "Totally Fake Fine Frit 1 lb jar", "Supplier description does not match"
     assert line_items[2].Rate == 12.42, "Rate does not match"
     assert line_items[2].Amount == 12.42, "Amount does not match"
+    assert line_items[2].LineCount == 3, "Count does not match"
 
     #item that was not in inventory before has been added
     new_item = main.read_inventory_entry("80028", db)

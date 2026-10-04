@@ -32,6 +32,7 @@ class InvoiceLineItemBase(BaseModel):
     SuppliersDesc: str
     Rate: float
     Amount: float
+    LineCount: int | None = None
 
 class InvoiceLineItemCreate(InvoiceLineItemBase):
     pass

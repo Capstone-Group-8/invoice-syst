@@ -52,6 +52,7 @@ def use_ocr(filepath):# -> tuple[InvoiceCreate, list[InvoiceLineItemCreate], lis
                         "Amount": float,
                         "OCRConfidence": float,
                         "Confidence": float,
+                        "LineCount": int,
                     }]
     }
     """
@@ -81,6 +82,7 @@ def use_ocr(filepath):# -> tuple[InvoiceCreate, list[InvoiceLineItemCreate], lis
             SuppliersDesc=item.Description,
             Rate= item.Rate,
             Amount=item.Amount,
+            LineCount=item.LineCount,
         )
         new_validatable_item = InvoiceLine(item.Quantity, item.SuppliersID, item.SuppliersDesc, item.Rate, item.Amount)
         validatable_invoice.add_line_item(new_validatable_item)

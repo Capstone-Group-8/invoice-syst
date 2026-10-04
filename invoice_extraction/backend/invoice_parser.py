@@ -408,8 +408,10 @@ def parse_line_items(rows):
             anchors.append((index, product_item))
 
     line_items = []
+    linecount = 0
 
     for pos, (start, product_item) in enumerate(anchors):
+        linecount += 1
         end = anchors[pos + 1][0] if pos + 1 < len(anchors) else len(rows)
         item_rows = rows[start:end]
         suppliers_id = compact_text(product_item["text"])
@@ -452,6 +454,7 @@ def parse_line_items(rows):
                 "Amount": fields["Amount"],
                 "OCRConfidence": round(ocr_confidence, 4),
                 "Confidence": score,
+                "LineCount": linecount,
             }
         )
 

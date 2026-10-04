@@ -22,6 +22,7 @@ class InvoiceLineItem(Base):
     SuppliersDesc = Column(String(120), nullable=False)
     Rate = Column(Float, nullable=False)
     Amount = Column(Float, nullable=False)
+    LineCount = Column(Integer, nullable=True)
 
 class Invoice(Base):
     __tablename__ = "Invoices"
