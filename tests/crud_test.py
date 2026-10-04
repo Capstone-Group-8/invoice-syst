@@ -186,7 +186,7 @@ def test_update_line_item():
             SuppliersDesc="Tangerine Full Double-Rolled Updated",
             Rate=60.58,
             Amount=180.90,
-            LineCount=1,
+            LineCount=2,
         ),
         db,
     )
@@ -233,7 +233,7 @@ def test_read_inventory():
     assert len(inventory) > 0
 
 def test_update_inventory():
-    main.update_inventory_item(
+    main.update_inventory(
         "80026",
         main.InventoryUpdate(
             SuppliersID="00125-0030-F-FULL",
@@ -342,7 +342,7 @@ def test_handle_invoice():
             LineCount = 3,
     )
     main.handle_invoice(invoice, [item1, item2, item3], [(0.95, 0.90), (0.42, 0.48), (0.85, 0.80)], db)
-    main.handle_lines([item1, item2, item3], invoice.Supplier, db, test_toggle=True)
+    main.update_all_inventory([item1, item2, item3], invoice.Supplier, db, test_toggle=True)
     new_invoice = main.read_invoice("INV-DEMO-06", db)
     line_items = main.read_invoice_items("INV-DEMO-06", db)
     #invoice has been added
