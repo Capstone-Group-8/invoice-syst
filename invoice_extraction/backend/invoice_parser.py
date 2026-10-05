@@ -11,6 +11,8 @@ import re
 import statistics
 
 
+
+
 PRODUCT_ID_PATTERN = re.compile(
     r"^\d{6}-[A-Za-z0-9]+-[A-Za-z0-9]+-[A-Za-z0-9]+$"
 )
@@ -68,12 +70,9 @@ def looks_like_money(text):
 def row_center_y(row):
     if not row:
         return 0.0
-
     return statistics.mean(
-        safe_number(item.get("y"))
-        + safe_number(item.get("height")) / 2
-        for item in row
-        if item
+        safe_number(item.get("y")) + safe_number(item.get("height")) / 2
+        for item in row if item
     )
 
 
@@ -82,48 +81,22 @@ def group_page(results):
     if not results:
         return []
 
-    heights = [
-        safe_number(r.get("height"), 0)
-        for r in results
-        if safe_number(r.get("height"), 0) > 0
-    ]
-
+    heights = [safe_number(r.get("height"), 0) for r in results if safe_number(r.get("height"), 0) > 0]
     if not heights:
         return []
 
     median_height = statistics.median(heights)
     rows = []
 
-    for result in sorted(
-        results,
-        key=lambda r: (
-            safe_number(r.get("y")),
-            safe_number(r.get("x")),
-        ),
-    ):
-        center_y = (
-            safe_number(result.get("y"))
-            + safe_number(result.get("height")) / 2
-        )
-
+    for result in sorted(results, key=lambda r: (safe_number(r.get("y")), safe_number(r.get("x")))):
+        center_y = safe_number(result.get("y")) + safe_number(result.get("height")) / 2
         best_row = None
         best_distance = None
 
         for row in rows:
             distance = abs(center_y - row_center_y(row))
-
-            allowed = max(
-                median_height * 0.65,
-                safe_number(result.get("height")) * 0.55,
-            )
-
-            if (
-                distance <= allowed
-                and (
-                    best_distance is None
-                    or distance < best_distance
-                )
-            ):
+            allowed = max(median_height * 0.65, safe_number(result.get("height")) * 0.55)
+            if distance <= allowed and (best_distance is None or distance < best_distance):
                 best_row = row
                 best_distance = distance
 
@@ -136,7 +109,6 @@ def group_page(results):
         row.sort(key=lambda r: safe_number(r.get("x")))
 
     rows.sort(key=row_center_y)
-
     return rows
 
 
@@ -146,14 +118,12 @@ def remove_duplicate_results(results):
 
     for result in results:
         text = clean_text(result.get("text", "")).lower()
-
         key = (
             result.get("page", 1),
             text,
             round(safe_number(result.get("x")), 1),
             round(safe_number(result.get("y")), 1),
         )
-
         if key not in seen:
             seen.add(key)
             unique.append(result)
@@ -175,11 +145,7 @@ def combine_wrapped_product_ids(rows):
 
         for idx, item in enumerate(current):
             value = compact_text(item.get("text", ""))
-
-            if (
-                starts_like_product_id(value)
-                and not looks_like_product_id(value)
-            ):
+            if starts_like_product_id(value) and not looks_like_product_id(value):
                 partial_index = idx
                 break
 
@@ -192,53 +158,26 @@ def combine_wrapped_product_ids(rows):
         next_row = rows[i + 1]
 
         candidates = []
-
         for idx, item in enumerate(next_row):
             value = compact_text(item.get("text", ""))
-
             if not value or len(value) > 12:
                 continue
 
-            x_distance = abs(
-                safe_number(item.get("x"))
-                - safe_number(partial.get("x"))
-            )
+            x_distance = abs(safe_number(item.get("x")) - safe_number(partial.get("x")))
+            y_distance = abs(row_center_y(next_row) - row_center_y(current))
 
-            y_distance = abs(
-                row_center_y(next_row)
-                - row_center_y(current)
-            )
-
-            if (
-                x_distance
-                <= max(
-                    150,
-                    safe_number(partial.get("width")) * 2,
-                )
-                and y_distance
-                <= max(
-                    safe_number(partial.get("height")) * 2,
-                    30,
-                )
+            if x_distance <= max(150, safe_number(partial.get("width")) * 2) and y_distance <= max(
+                safe_number(partial.get("height")) * 2, 30
             ):
-                candidates.append(
-                    (x_distance, idx, item)
-                )
+                candidates.append((x_distance, idx, item))
 
         if not candidates:
             output.append(current)
             i += 1
             continue
 
-        _, continuation_index, continuation = min(
-            candidates,
-            key=lambda x: x[0],
-        )
-
-        combined = (
-            compact_text(partial.get("text", ""))
-            + compact_text(continuation.get("text", ""))
-        )
+        _, continuation_index, continuation = min(candidates, key=lambda x: x[0])
+        combined = compact_text(partial.get("text", "")) + compact_text(continuation.get("text", ""))
 
         if not looks_like_product_id(combined):
             output.append(current)
@@ -247,34 +186,17 @@ def combine_wrapped_product_ids(rows):
 
         repaired = dict(partial)
         repaired["text"] = combined
-
         repaired["confidence"] = min(
             safe_number(partial.get("confidence")),
-            safe_number(
-                continuation.get("confidence")
-            ),
+            safe_number(continuation.get("confidence")),
         )
 
-        new_current = [
-            item
-            for idx, item in enumerate(current)
-            if idx != partial_index
-        ]
-
+        new_current = [item for idx, item in enumerate(current) if idx != partial_index]
         new_current.append(repaired)
-
-        new_current.sort(
-            key=lambda r: safe_number(r.get("x"))
-        )
-
+        new_current.sort(key=lambda r: safe_number(r.get("x")))
         output.append(new_current)
 
-        remaining = [
-            item
-            for idx, item in enumerate(next_row)
-            if idx != continuation_index
-        ]
-
+        remaining = [item for idx, item in enumerate(next_row) if idx != continuation_index]
         if remaining:
             output.append(remaining)
 
@@ -289,17 +211,12 @@ def group_text(results):
         return []
 
     results = remove_duplicate_results(results)
-
     pages = {}
 
     for result in results:
-        pages.setdefault(
-            result.get("page", 1),
-            [],
-        ).append(result)
+        pages.setdefault(result.get("page", 1), []).append(result)
 
     all_rows = []
-
     for page in sorted(pages):
         rows = group_page(pages[page])
         rows = combine_wrapped_product_ids(rows)
@@ -309,54 +226,30 @@ def group_text(results):
 
 
 def clamp(value):
-    return max(
-        0.0,
-        min(1.0, float(value)),
-    )
+    return max(0.0, min(1.0, float(value)))
 
 
 def product_id_format_score(suppliers_id):
-    return (
-        1.0
-        if suppliers_id
-        and looks_like_product_id(suppliers_id)
-        else 0.0
-    )
+    return 1.0 if suppliers_id and looks_like_product_id(suppliers_id) else 0.0
 
 
 def math_validation(quantity, rate, amount):
     """Validate Quantity * Rate = Amount with currency rounding tolerance."""
-
-    if (
-        quantity is None
-        or rate is None
-        or amount is None
-    ):
+    if quantity is None or rate is None or amount is None:
         return 0.0
 
     try:
-        expected = round(
-            float(quantity) * float(rate),
-            2,
-        )
-
+        expected = round(float(quantity) * float(rate), 2)
         actual = round(float(amount), 2)
-
-        difference = abs(
-            expected - actual
-        )
+        difference = abs(expected - actual)
 
         if difference <= 0.01:
             return 1.0
-
         if difference <= 0.05:
             return 0.8
-
         if difference <= 0.50:
             return 0.4
-
         return 0.0
-
     except (TypeError, ValueError):
         return 0.0
 
@@ -378,25 +271,10 @@ def calculate_confidence(
     Quantity/Rate/Amount: 30%
     """
 
-    ocr_score = clamp(
-        ocr_confidence
-    )
-
-    id_score = product_id_format_score(
-        suppliers_id
-    )
-
-    db_score = (
-        1.0
-        if database_match
-        else 0.0
-    )
-
-    math_score = math_validation(
-        quantity,
-        rate,
-        amount,
-    )
+    ocr_score = clamp(ocr_confidence)
+    id_score = product_id_format_score(suppliers_id)
+    db_score = 1.0 if database_match else 0.0
+    math_score = math_validation(quantity, rate, amount)
 
     return round(
         clamp(
@@ -411,38 +289,27 @@ def calculate_confidence(
 
 def confidence_level(score):
     score = float(score)
-
     if score >= 0.90:
         return "HIGH"
-
     if score >= 0.75:
         return "MEDIUM"
-
     return "LOW"
 
 
 def find_product_anchor(row):
     for item in row:
-        if looks_like_product_id(
-            item.get("text", "")
-        ):
+        if looks_like_product_id(item.get("text", "")):
             return item
-
     return None
 
 
-def find_fields_in_item(
-    item_rows,
-    product_item,
-):
+def find_fields_in_item(item_rows, product_item):
     hs_candidates = []
     money_candidates = []
 
     for row in item_rows:
         for item in row:
-            text = compact_text(
-                item.get("text", "")
-            )
+            text = compact_text(item.get("text", ""))
 
             if looks_like_hs_code(text):
                 hs_candidates.append(item)
@@ -451,87 +318,38 @@ def find_fields_in_item(
             if looks_like_money(text):
                 money_candidates.append(item)
 
-    hs_item = (
-        hs_candidates[-1]
-        if hs_candidates
-        else None
-    )
+    hs_item = hs_candidates[-1] if hs_candidates else None
+    hs_code = compact_text(hs_item["text"]) if hs_item else None
 
-    hs_code = (
-        compact_text(hs_item["text"])
-        if hs_item
-        else None
-    )
-
-    money_candidates.sort(
-        key=lambda item: (
-            item["y"],
-            item["x"],
-        )
-    )
+    money_candidates.sort(key=lambda item: (item["y"], item["x"]))
 
     rate_item = None
     amount_item = None
 
     if money_candidates:
         last_y = money_candidates[-1]["y"]
-
         tolerance = max(
             5.0,
-            money_candidates[-1].get(
-                "height",
-                10,
-            )
-            * 1.5,
+            money_candidates[-1].get("height", 10) * 1.5
         )
 
         last_row_money = [
-            item
-            for item in money_candidates
-            if abs(
-                item["y"] - last_y
-            )
-            <= tolerance
+            item for item in money_candidates
+            if abs(item["y"] - last_y) <= tolerance
         ]
 
         if len(last_row_money) >= 2:
-            last_row_money.sort(
-                key=lambda item: item["x"]
-            )
-
-            rate_item = (
-                last_row_money[-2]
-            )
-
-            amount_item = (
-                last_row_money[-1]
-            )
-
+            last_row_money.sort(key=lambda item: item["x"])
+            rate_item = last_row_money[-2]
+            amount_item = last_row_money[-1]
         elif len(money_candidates) >= 2:
-            rate_item = (
-                money_candidates[-2]
-            )
-
-            amount_item = (
-                money_candidates[-1]
-            )
-
+            rate_item = money_candidates[-2]
+            amount_item = money_candidates[-1]
         else:
-            amount_item = (
-                money_candidates[-1]
-            )
+            amount_item = money_candidates[-1]
 
-    rate = (
-        parse_number(rate_item["text"])
-        if rate_item
-        else None
-    )
-
-    amount = (
-        parse_number(amount_item["text"])
-        if amount_item
-        else None
-    )
+    rate = parse_number(rate_item["text"]) if rate_item else None
+    amount = parse_number(amount_item["text"]) if amount_item else None
 
     return {
         "HSCode": hs_code,
@@ -543,11 +361,7 @@ def find_fields_in_item(
     }
 
 
-def build_description(
-    item_rows,
-    product_item,
-    field_data,
-):
+def build_description(item_rows, product_item, field_data):
     excluded = {
         id(item)
         for item in (
@@ -560,45 +374,29 @@ def build_description(
 
     parts = []
 
-    for row_index, row in enumerate(
-        item_rows
-    ):
+    for row_index, row in enumerate(item_rows):
         for item in row:
             if item is product_item:
                 continue
-
             if id(item) in excluded:
                 continue
 
-            text = clean_text(
-                item.get("text", "")
-            )
-
+            text = clean_text(item.get("text", ""))
             if not text:
                 continue
 
             lower = text.lower()
-
             if lower in HEADER_WORDS:
                 continue
 
-            if (
-                row_index == 0
-                and item["x"]
-                < product_item["x"]
-            ):
-                if INTEGER_PATTERN.fullmatch(
-                    compact_text(text)
-                ):
+            if row_index == 0 and item["x"] < product_item["x"]:
+                if INTEGER_PATTERN.fullmatch(compact_text(text)):
                     continue
 
             if looks_like_product_id(text):
                 continue
 
-            if re.fullmatch(
-                r"\d+\s+of\s+\d+",
-                lower,
-            ):
+            if re.fullmatch(r"\d+\s+of\s+\d+", lower):
                 continue
 
             parts.append(text)
@@ -608,94 +406,37 @@ def build_description(
 
 def parse_line_items(rows):
     anchors = []
-
     for index, row in enumerate(rows):
-        product_item = find_product_anchor(
-            row
-        )
-
+        product_item = find_product_anchor(row)
         if product_item is not None:
-            anchors.append(
-                (index, product_item)
-            )
+            anchors.append((index, product_item))
 
     line_items = []
     linecount = 0
 
-    for pos, (
-        start,
-        product_item,
-    ) in enumerate(anchors):
+    for pos, (start, product_item) in enumerate(anchors):
         linecount += 1
-
-        end = (
-            anchors[pos + 1][0]
-            if pos + 1 < len(anchors)
-            else len(rows)
-        )
-
+        end = anchors[pos + 1][0] if pos + 1 < len(anchors) else len(rows)
         item_rows = rows[start:end]
-
-        suppliers_id = compact_text(
-            product_item["text"]
-        )
-
-        # Parser sentinel when a quantity is not found.
-        quantity = -1
-
+        suppliers_id = compact_text(product_item["text"])
+        quantity = -1 #this can't start as None if you're going to make it an int later
         quantity_candidates = []
-
         for item in rows[start]:
             if item is product_item:
                 continue
-
-            text = compact_text(
-                item.get("text", "")
-            )
-
-            if not INTEGER_PATTERN.fullmatch(
-                text
-            ):
+            text = compact_text(item.get("text", ""))
+            if not INTEGER_PATTERN.fullmatch(text):
                 continue
-
             if item["x"] < product_item["x"]:
-                quantity_candidates.append(
-                    (
-                        product_item["x"]
-                        - item["x"],
-                        item,
-                    )
-                )
-
+                quantity_candidates.append((product_item["x"] - item["x"], item))
         if quantity_candidates:
-            _, quantity_item = min(
-                quantity_candidates,
-                key=lambda c: c[0],
-            )
-
+            _, quantity_item = min(quantity_candidates, key=lambda c: c[0])
             if quantity_item.get("text"):
-                quantity = parse_number(
-                    quantity_item["text"]
-                )
+                quantity = parse_number(quantity_item["text"])
 
-        fields = find_fields_in_item(
-            item_rows,
-            product_item,
-        )
-
-        description = build_description(
-            item_rows,
-            product_item,
-            fields,
-        )
-
-        ocr_confidence = float(
-            product_item.get(
-                "confidence",
-                0,
-            )
-        )
-
+        fields = find_fields_in_item(item_rows, product_item)
+        description = build_description(item_rows, product_item, fields)
+        ocr_confidence = float(product_item.get("confidence", 0))
         database_match = False
 
         score = calculate_confidence(
@@ -715,10 +456,7 @@ def parse_line_items(rows):
                 "HSCode": fields["HSCode"],
                 "Rate": fields["Rate"],
                 "Amount": fields["Amount"],
-                "OCRConfidence": round(
-                    ocr_confidence,
-                    4,
-                ),
+                "OCRConfidence": round(ocr_confidence, 4),
                 "Confidence": score,
                 "LineCount": linecount,
             }
@@ -741,34 +479,20 @@ def parse_invoice_metadata(rows):
     # Convert each visual OCR row into searchable text once.
     row_texts = [
         " ".join(
-            clean_text(
-                item.get("text", "")
-            )
+            clean_text(item.get("text", ""))
             for item in row
         )
         for row in rows
     ]
 
-    date_pattern = re.compile(
-        r"\b(\d{4}-\d{2}-\d{2})\b"
-    )
+    date_pattern = re.compile(r"\b(\d{4}-\d{2}-\d{2})\b")
 
-    for index, text in enumerate(
-        row_texts
-    ):
-        if not metadata[
-            "InvoiceNumber"
-        ]:
-            match = re.search(
-                r"\bINV\d+\b",
-                text,
-                re.IGNORECASE,
-            )
+    for index, text in enumerate(row_texts):
 
+        if not metadata["InvoiceNumber"]:
+            match = re.search(r"\bINV\d+\b", text, re.IGNORECASE)
             if match:
-                metadata[
-                    "InvoiceNumber"
-                ] = match.group(0)
+                metadata["InvoiceNumber"] = match.group(0)
 
         # Due Date normally appears on the same OCR row.
         match = re.search(
@@ -776,107 +500,117 @@ def parse_invoice_metadata(rows):
             text,
             re.IGNORECASE,
         )
-
         if match:
-            metadata[
-                "DueDate"
-            ] = match.group(1)
+            metadata["DueDate"] = match.group(1)
 
-        # Order Date may be on the same row or following OCR row.
+        # Order Date may be on the same row or the following OCR row.
         match = re.search(
             r"Order\s*Date\s+.*?(\d{4}-\d{2}-\d{2})",
             text,
             re.IGNORECASE,
         )
-
         if match:
-            metadata[
-                "OrderDate"
-            ] = match.group(1)
-
+            metadata["OrderDate"] = match.group(1)
         elif (
             metadata["OrderDate"] is None
-            and re.search(
-                r"\bOrder\s*Date\b",
-                text,
-                re.IGNORECASE,
-            )
-            and index + 1
-            < len(row_texts)
+            and re.search(r"\bOrder\s*Date\b", text, re.IGNORECASE)
+            and index + 1 < len(row_texts)
         ):
-            next_match = (
-                date_pattern.search(
-                    row_texts[index + 1]
-                )
-            )
-
+            next_match = date_pattern.search(row_texts[index + 1])
             if next_match:
-                metadata[
-                    "OrderDate"
-                ] = next_match.group(1)
+                metadata["OrderDate"] = next_match.group(1)
 
-        # Ship Date may be on the same row or following OCR row.
+        # Ship Date may be on the same row or the following OCR row.
         match = re.search(
             r"Ship\s*Date\s+.*?(\d{4}-\d{2}-\d{2})",
             text,
             re.IGNORECASE,
         )
-
         if match:
-            metadata[
-                "ShipDate"
-            ] = match.group(1)
-
+            metadata["ShipDate"] = match.group(1)
         elif (
             metadata["ShipDate"] is None
-            and re.search(
-                r"\bShip\s*Date\b",
-                text,
-                re.IGNORECASE,
-            )
-            and index + 1
-            < len(row_texts)
+            and re.search(r"\bShip\s*Date\b", text, re.IGNORECASE)
+            and index + 1 < len(row_texts)
         ):
-            next_match = (
-                date_pattern.search(
-                    row_texts[index + 1]
-                )
-            )
-
+            next_match = date_pattern.search(row_texts[index + 1])
             if next_match:
-                metadata[
-                    "ShipDate"
-                ] = next_match.group(1)
+                metadata["ShipDate"] = next_match.group(1)
 
         if "Bullseye Glass Co." in text:
-            metadata[
-                "Supplier"
-            ] = "Bullseye Glass Co."
+            metadata["Supplier"] = "Bullseye Glass Co."
 
         match = re.search(
             r"Total\s+USD\s+\$?([\d,]+\.\d{2})",
             text,
             re.IGNORECASE,
         )
-
         if match:
-            metadata[
-                "TotalAmt"
-            ] = parse_number(
-                match.group(1)
-            )
+            metadata["TotalAmt"] = parse_number(match.group(1))
+
+    return metadata
+    metadata = {
+        "InvoiceNumber": "",
+        "OrderDate": None,
+        "ShipDate": None,
+        "DueDate": None,
+        "ShippingHandling": -0.1,
+        "TotalAmt": -0.1,
+        "Supplier": "",
+    }
+
+    for row in rows:
+        text = " ".join(
+            clean_text(item.get("text", ""))
+            for item in row
+        )
+
+        if not metadata["InvoiceNumber"]:
+            match = re.search(r"\bINV\d+\b", text, re.IGNORECASE)
+            if match:
+                metadata["InvoiceNumber"] = match.group(0)
+
+        match = re.search(
+            r"Due\s*Date\s*:\s*(\d{4}-\d{2}-\d{2})",
+            text,
+            re.IGNORECASE,
+        )
+        if match:
+            metadata["DueDate"] = match.group(1)
+
+        match = re.search(
+            r"Order\s*Date\s+.*?(\d{4}-\d{2}-\d{2})",
+            text,
+            re.IGNORECASE,
+        )
+        if match:
+            metadata["OrderDate"] = match.group(1)
+
+        match = re.search(
+            r"Ship\s*Date\s+.*?(\d{4}-\d{2}-\d{2})",
+            text,
+            re.IGNORECASE,
+        )
+        if match:
+            metadata["ShipDate"] = match.group(1)
+
+        if "Bullseye Glass Co." in text:
+            metadata["Supplier"] = "Bullseye Glass Co."
+
+        match = re.search(
+            r"Total\s+USD\s+\$?([\d,]+\.\d{2})",
+            text,
+            re.IGNORECASE,
+        )
+        if match:
+            metadata["TotalAmt"] = parse_number(match.group(1))
 
     return metadata
 
 
 def parse_invoice_fields(rows):
-    metadata = parse_invoice_metadata(
-        rows
-    )
-
-    line_items = parse_line_items(
-        rows
-    )
+    metadata = parse_invoice_metadata(rows)
+    line_items = parse_line_items(rows)
 
     return {
         "Invoice": metadata,
