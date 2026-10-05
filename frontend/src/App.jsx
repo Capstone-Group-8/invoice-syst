@@ -1,5 +1,12 @@
-import { useEffect, useState } from "react";
+/*
+ * Capstone Group 8 - Invoice Processing System
+ * Name: Seth Z. Roth
+ * Date: October 4, 2026
+ * Role: Interface Designer
+ * Contribution: React invoice upload integration and human-in-the-loop review interface
+ */
 
+import { useEffect, useState } from "react";
 
 const API = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8001";
 
@@ -25,9 +32,13 @@ function App() {
       })
       .then((data) => {
         setInvoices(data);
-        setStatus(data.length ? "" : "Backend connected. No invoices found yet.");
+        setStatus(
+          data.length ? "" : "Backend connected. No invoices found yet."
+        );
       })
-      .catch(() => setStatus("Frontend is working. Backend is not connected yet."));
+      .catch(() =>
+        setStatus("Frontend is working. Backend is not connected yet.")
+      );
   }, []);
 
   async function viewInvoice(invoice) {
@@ -36,7 +47,10 @@ function App() {
     setSelectedLineItems([]);
     setOriginalLineItems([]);
     try {
-      const response = await fetch(`${API}/invoices/${invoice.InvoiceNumber}/lineitems`);
+      const response = await fetch(
+        `${API}/invoices/${invoice.InvoiceNumber}/lineitems`
+      );
+
       if (!response.ok) throw new Error();
       setSelectedLineItems(await response.json());
     } catch {
@@ -80,6 +94,44 @@ function App() {
       })); */
     }
   console.log("collectUpdate done",selectedLineItems);
+  }
+
+  async function uploadInvoice(e) {
+    e.preventDefault();
+
+    if (!selectedFile) {
+      setUploadMessage("Please select a PDF first.");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("file", selectedFile);
+
+    setUploading(true);
+    setUploadMessage("Processing invoice...");
+
+    try {
+      const response = await fetch(`${API}/upload`, {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || "Upload failed");
+      }
+
+      await response.json();
+
+      setUploadMessage("Invoice processed successfully.");
+
+      window.location.reload(false);
+    } catch (error) {
+      console.error(error);
+      setUploadMessage("Unable to process invoice.");
+    } finally {
+      setUploading(false);
+    }
   }
 
   async function update_form(e) {
@@ -230,8 +282,9 @@ async function uploadInvoice(e) {
       <header>
         <p className="eyebrow">Capstone Group 8</p>
         <h1>Invoice Processing System</h1>
-        <p className="subtitle">Human-in-the-loop review of workplace invoice data.</p>
-        
+        <p className="subtitle">
+          Human-in-the-loop review of workplace invoice data.
+        </p>
       </header>
 
       {status && <div className="status">{status}</div>}
@@ -258,7 +311,29 @@ async function uploadInvoice(e) {
       </section>
 
       <section className="panel">
+        <h2>Upload Invoice</h2>
+
+        <form onSubmit={uploadInvoice}>
+          <input
+            type="file"
+            accept="application/pdf"
+            onChange={(e) => {
+              setSelectedFile(e.target.files[0]);
+              setUploadMessage("");
+            }}
+          />
+
+          <button type="submit" disabled={uploading}>
+            {uploading ? "Processing..." : "Upload PDF"}
+          </button>
+        </form>
+
+        {uploadMessage && <p>{uploadMessage}</p>}
+      </section>
+
+      <section className="panel">
         <h2>Invoices</h2>
+
         {invoices.length > 0 && (
           <div className="table-wrap">
             <table>
@@ -271,6 +346,7 @@ async function uploadInvoice(e) {
                   <th></th>
                 </tr>
               </thead>
+
               <tbody>
                 {invoices.map((invoice) => (
                   <tr key={invoice.InvoiceNumber}>
@@ -279,7 +355,9 @@ async function uploadInvoice(e) {
                     <td>{invoice.OrderDate}</td>
                     <td>${Number(invoice.TotalAmt).toFixed(2)}</td>
                     <td>
-                      <button onClick={() => viewInvoice(invoice)}>View</button> 
+                      <button onClick={() => viewInvoice(invoice)}>
+                        View
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -292,35 +370,67 @@ async function uploadInvoice(e) {
       {selectedInvoice && !editable && (
         <section className="panel">
           <h2>Invoice {selectedInvoice.InvoiceNumber}</h2>
-          <p><button onClick={() => editInvoice(selectedInvoice)}>Edit</button></p>
+
+          <p>
+            <button onClick={() => editInvoice(selectedInvoice)}>
+              Edit
+            </button>
+          </p>
+
           <div className="summary-grid">
-            <span><strong>Supplier:</strong> {selectedInvoice.Supplier}</span>
-            <span><strong>Order Date: </strong> {selectedInvoice.OrderDate}</span>
-            <span><strong>Sales Order:</strong> {selectedInvoice.SalesOrderNo}</span>
-            <span><strong>Due:</strong> {selectedInvoice.DueDate}</span>
-            <span><strong>Shipped On:</strong> {selectedInvoice.ShipDate} </span>
+            <span>
+              <strong>Supplier:</strong> {selectedInvoice.Supplier}
+            </span>
+
+            <span>
+              <strong>Order Date:</strong> {selectedInvoice.OrderDate}
+            </span>
+
+            <span>
+              <strong>Sales Order:</strong> {selectedInvoice.SalesOrderNo}
+            </span>
+
+            <span>
+              <strong>Due:</strong> {selectedInvoice.DueDate}
+            </span>
+
+            <span>
+              <strong>Shipped On:</strong> {selectedInvoice.ShipDate}
+            </span>
           </div>
+
           <div className="summary-grid">
-            <span><strong>Shipping:</strong> ${Number(selectedInvoice.ShippingHandling).toFixed(2)}</span>
-            <span><strong>Total:</strong> ${Number(selectedInvoice.TotalAmt).toFixed(2)}</span>
+            <span>
+              <strong>Shipping:</strong> $
+              {Number(selectedInvoice.ShippingHandling).toFixed(2)}
+            </span>
+
+            <span>
+              <strong>Total:</strong> $
+              {Number(selectedInvoice.TotalAmt).toFixed(2)}
+            </span>
           </div>
+
           <h3>Line Items</h3>
           {selectedLineItems.length === 0 ? (
             <p>No line items available.</p>
           ) : (
             selectedLineItems.map((item) => (
-              <div className="line-item" key={`${item.InvoiceNumber}-${item.SuppliersID}`}>
+              <div className="line-item" key={`${item.InvoiceNumber}-${item.LineCount}`}>
                 <div>
                   <strong>{item.SuppliersDesc}</strong>
                   <small>{item.SuppliersID}</small>
                 </div>
-                <span>{item.Quantity} × ${Number(item.Rate).toFixed(2)} = ${Number(item.Amount).toFixed(2)}</span>
+
+                <span>
+                  {item.Quantity} × ${Number(item.Rate).toFixed(2)} = $
+                  {Number(item.Amount).toFixed(2)}
+                </span>
               </div>
             ))
           )}
         </section>
       )}
-
 
       {selectedInvoice && editable && (
         <section className="panel">
@@ -377,13 +487,14 @@ async function uploadInvoice(e) {
           </div>
           <input type="submit" />
           </form>
+
           <h3>Line Items</h3>
           {selectedLineItems.length === 0 ? (
             <p>No line items available.</p>
           ) : (
 
             selectedLineItems.map((item) => (
-              <div className="line-item" key={`${item.InvoiceNumber}-${item.SuppliersID}`}>
+              <div className="line-item" key={`${item.InvoiceNumber}-${item.LineCount}`}>
                 <div>
                   <input type="text" className="form-control" 
                   value={item.SuppliersDesc || ""} required
@@ -392,7 +503,11 @@ async function uploadInvoice(e) {
                   value={item.SuppliersID}
                   onChange={(e) => collectUpdate(item.LineCount + "-SuppliersID",e.target.value, true)}/>
                 </div>
-                <span>{item.Quantity} × ${Number(item.Rate).toFixed(2)} = ${Number(item.Amount).toFixed(2)}</span>
+
+                <span>
+                  {item.Quantity} × ${Number(item.Rate).toFixed(2)} = $
+                  {Number(item.Amount).toFixed(2)}
+                </span>
               </div>
             ))
           )}
