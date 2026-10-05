@@ -233,7 +233,7 @@ def test_read_inventory():
     assert len(inventory) > 0
 
 def test_update_inventory():
-    main.update_inventory(
+    main.update_inventory_item(
         "80026",
         main.InventoryUpdate(
             SuppliersID="00125-0030-F-FULL",
@@ -342,7 +342,7 @@ def test_handle_invoice():
             LineCount = 3,
     )
     main.handle_invoice(invoice, [item1, item2, item3], [(0.95, 0.90), (0.42, 0.48), (0.85, 0.80)], db)
-    main.update_all_inventory([item1, item2, item3], invoice.Supplier, db, test_toggle=True)
+    main.confirm_values([item1, item2, item3], invoice.Supplier, db, test_toggle=True)
     new_invoice = main.read_invoice("INV-DEMO-06", db)
     line_items = main.read_invoice_items("INV-DEMO-06", db)
     #invoice has been added

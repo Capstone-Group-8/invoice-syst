@@ -4,8 +4,6 @@ Created on Aug 26, 2026
 @author: Sally Little
 '''
 
-#from inv import CompleteInvoice, InvoiceLine
-
 import re
 
 
@@ -29,19 +27,19 @@ def fail_line_arithmetic_validation(line, count):
 def fail_total_arithmetic_validation(invoice, subtotal):
     #rewrite this function to present the error to the user
     #and guess the correction?
-    print(f"Failed total validation:\nSubtotal ${subtotal} + shipping cost ${invoice.shipping} is not ${invoice.total}")
+    print(f"Failed total validation:\nSubtotal ${subtotal} + shipping cost ${invoice.ShippingHandling} is not ${invoice.TotalAmt}")
     return(f"Arithmetic_total_error /")
 
 
 def test_line_semantic_validation(line, group1, group3, count):
     def check_desc_for(keys):
-        desc = line.Description.lower()
+        desc = line.SuppliersDesc.lower()
         print("desc", desc)
         for key in keys:
             print("key", key)
             if key not in desc:
                 #print("fail")
-                fail_line_semantic_validation(keys, line.Description, count)
+                fail_line_semantic_validation(keys, line.SuppliersDesc, count)
                 return(f"Semantic_error (line {count}) /")
         #print("pass")
         return "200"
@@ -78,8 +76,7 @@ def test_line_semantic_validation(line, group1, group3, count):
     else:
         return '200'
 
-def validate(invoice):
-    line_items = invoice.line_items
+def validate(invoice, line_items): 
     subtotal = 0
     errors = ""
     count = 0
@@ -102,7 +99,7 @@ def validate(invoice):
         if (i.Quantity * i.Rate != i.Amount):
             errors += fail_line_arithmetic_validation(i, count)
         subtotal += i.Amount
-    if (subtotal + invoice.shipping != invoice.total):
+    if (subtotal + invoice.ShippingHandling != invoice.TotalAmt):
         errors += fail_total_arithmetic_validation(invoice, subtotal)
     if (errors == ""):
         return "200"

@@ -131,26 +131,24 @@ def create_change(change: ChangeLogCreate, db: Session = Depends(get_db)):
 #PUT
 @app.put("/invoices/{InvoiceNumber}", response_model=Invoice)
 def update_invoice(InvoiceNumber: str, invoice: InvoiceUpdate, db: Session = Depends(get_db)):
-    #print(f"Updating invoice with InvoiceNumber: {InvoiceNumber} by calling crud.update_invoice from line 122 of main.py\n{invoice}")  # Debugging statement
+    #print(f"Updating invoice with InvoiceNumber: {InvoiceNumber} 
     updated = crud.update_invoice(db, InvoiceNumber, invoice)
     if not updated:
         raise HTTPException(status_code=404, detail="invoice not found")
     return updated
 
 @app.put("/lineitems/{InvoiceNumber}/{SuppliersID}", response_model=InvoiceLineItem)
-def update_line_item(
-    InvoiceNumber: str,
-    SuppliersID: str,
-    line_item: InvoiceLineItemUpdate,
-    db: Session = Depends(get_db),
-):
+def update_line_item(InvoiceNumber: str,
+                     SuppliersID: str,
+                     line_item: InvoiceLineItemUpdate,
+                     db: Session = Depends(get_db)):
     updated = crud.update_line_item(db, InvoiceNumber, SuppliersID, line_item)
     if not updated:
         raise HTTPException(status_code=404, detail="line item not found")
     return updated
 
 @app.put("/inventory/{ProductID}", response_model=Inventory)
-def update_inventory(ProductID: str, inventory_entry: InventoryUpdate, db: Session = Depends(get_db)):
+def update_inventory_item(ProductID: str, inventory_entry: InventoryUpdate, db: Session = Depends(get_db)):
     updated = crud.update_inventory_entry(db, ProductID, inventory_entry)
     if not updated:
         raise HTTPException(status_code=404, detail="inventory entry not found")
@@ -177,19 +175,36 @@ def handle_invoice(metadata: InvoiceCreate, lineitems: list[InvoiceLineItemCreat
     #cause react to open the form updater
     #pass forward the confidence intervals
     #retrieve the changes
-    #update_invoice
-    #update line_items
-@app.post("/update_inventory")
-def update_all_inventory(lineitems: list[InvoiceLineItemCreate], Supplier: str, db: Session = Depends(get_db), test_toggle=False):
-    if test_toggle:
-        new_lineitems = lineitems #to enable testing to still work without actual updates
-    inventory, current_max = cache_inventory(db)
-    updated_items, new_items = inventory_updater.update(inventory, current_max, new_lineitems, Supplier)
-    for productID, item in updated_items:
-        update_inventory(productID, item, db)
-    for item in new_items:
-        create_new_inventory_entry(item, db)
 
+@app.post("/confirm_values")
+def confirm_values(Invoice: InvoiceCreate,
+                 InvoiceLineItems: list[InvoiceLineItemUpdate], 
+                         db: Session = Depends(get_db), 
+                         test_toggle=False):
+    result = uploader.update(Invoice, InvoiceLineItems)
+    if result != "200":
+        #raise HTTPException(status_code=400, detail="Validation failed")
+        return result
+    #app.jsx updates invoice
+    #updates line_items
+    #logs changes
+
+@app.post("/update_all_inventory")
+def update_all_inventory(Invoice: InvoiceCreate,
+                         InvoiceLineItems: list[InvoiceLineItemUpdate], 
+                         db: Session = Depends(get_db), 
+                         test_toggle=False):
+    inventory, current_max = cache_inventory(db)
+    Supplier = "Bullseye Glass Co."
+    updated_items, new_items = inventory_updater.update(inventory, current_max, InvoiceLineItems, Supplier)
+    # => lists of InventoryUpdate
+    for productID, item in updated_items:
+        #update_line_item(item.InvoiceNumber, item.SuppliersID, InvoiceLineItemUpdate(item), db)
+        update_inventory_item(productID, InventoryUpdate(item), db)
+    for item in new_items:
+        #update_line_item(item.InvoiceNumber, item.SuppliersID, item, db)
+        create_new_inventory_entry(item, db)
+    return '200'
 
 @app.post("/upload")
 #https://medium.com/@ThinkingLoop/fastapi-file-uploads-clean-fast-and-foolproof-4ecf0f00404f

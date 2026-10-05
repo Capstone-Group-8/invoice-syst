@@ -17,8 +17,8 @@ from schemas import (
 )
 
 def upload(target_path): # -> tuple[InvoiceCreate, list[InvoiceLineItemCreate], list[tuple[float, float]]]:
-    metadata, lineitems, confidences, validatable_invoice = use_ocr(target_path)
-    result = validation.validate(validatable_invoice)
+    metadata, lineitems, confidences = use_ocr(target_path)
+    result = validation.validate(metadata, lineitems)
     if result == "200":
         return metadata, lineitems, confidences
     else:
@@ -71,7 +71,6 @@ def use_ocr(filepath):# -> tuple[InvoiceCreate, list[InvoiceLineItemCreate], lis
         TotalAmt=TotalAmt,
         Supplier=metadata.Supplier
     )
-    validatable_invoice = CompleteInvoice(InvoiceNumber, ShippingHandling, TotalAmt)
     new_invoice_line_items = []
     confidence_intervals = []
     for item in payload.InvoiceLineItems: # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
@@ -84,11 +83,13 @@ def use_ocr(filepath):# -> tuple[InvoiceCreate, list[InvoiceLineItemCreate], lis
             Amount=item.Amount,
             LineCount=item.LineCount,
         )
-        new_validatable_item = InvoiceLine(item.Quantity, item.SuppliersID, item.SuppliersDesc, item.Rate, item.Amount)
-        validatable_invoice.add_line_item(new_validatable_item)
         new_invoice_line_items.append(new_item)
         confidence_intervals.append((item.OCRConfidence, item.Confidence))
-    return invoice, new_invoice_line_items, confidence_intervals, validatable_invoice
+    return invoice, new_invoice_line_items, confidence_intervals
 
-
-
+def update(invoice, line_items):
+    result = validation.validate(invoice, line_items)
+    if result == "200":
+        return result
+    else:
+        pass #parse errors and pass all back to front end

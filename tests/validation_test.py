@@ -6,111 +6,114 @@ Aug 31 2026
 import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
-
+from datetime import date
 import validation
-from inv import InvoiceLine, CompleteInvoice
+from schemas import Invoice, InvoiceLineItem
 
+invoice1 = Invoice(InvoiceNumber='INV009001', OrderDate=date(2025, 11, 5), ShipDate=date(2025, 12, 20),
+                   DueDate =date(2026, 1, 15), SalesOrderNo='SO0005', ShippingHandling=617.42, TotalAmt=741.50, Supplier='Bullseye Glass Co.')
+invoice2 = Invoice(InvoiceNumber='INV009001', OrderDate=date(2025, 11, 5), ShipDate=date(2025, 12, 20),
+                   DueDate=date(2026, 1, 15), SalesOrderNo='SO0005', ShippingHandling=617.42, TotalAmt=855.93, Supplier='Bullseye Glass Co.')
+invoice3 = Invoice(InvoiceNumber='INV009001', OrderDate=date(2025, 11, 5), ShipDate=date(2025, 12, 20),
+                   DueDate=date(2026, 1, 15), SalesOrderNo='SO0005', ShippingHandling=617.42, TotalAmt=796.42, Supplier='Bullseye Glass Co.')
+invoice4 = Invoice(InvoiceNumber='INV009001', OrderDate=date(2025, 11, 5), ShipDate=date(2025, 12, 20),
+                   DueDate=date(2026, 1, 15), SalesOrderNo='SO0005', ShippingHandling=617.42, TotalAmt=3729.63, Supplier='Bullseye Glass Co.')
 
 
 def test_syntax():
-    InvoiceNumber = 'INV009001'
-    my_invoice = CompleteInvoice(InvoiceNumber, 617.42, 741.50)
+    my_invoice = invoice1
     my_line_items = [
-        InvoiceLine(1, '000013-0001-F-P001', 'Opaque White Opal Fine Frit 1lb jar', 12.42, 12.42),
-        InvoiceLine(1, '00124-0030-F-FULL', 'Red Full Double-Rolled', 55.83, 55.83),
-        InvoiceLine(1, '000025-030-F-FULL', 'Tangerine Full Double-Rolled', 55.83, 55.83),
+        InvoiceLineItem(InvoiceNumber='INV009001',Quantity=1, SuppliersID='000013-0001-F-P001', SuppliersDesc='Opaque White Opal Fine Frit 1lb jar', Rate=12.42, Amount=12.42, LineCount =1),
+        InvoiceLineItem(InvoiceNumber='INV009001',Quantity=1, SuppliersID='00124-0030-F-FULL', SuppliersDesc='Red Full Double-Rolled', Rate=55.83, Amount=55.83, LineCount =2),
+        InvoiceLineItem(InvoiceNumber='INV009001',Quantity=1, SuppliersID='000025-030-F-FULL', SuppliersDesc='Tangerine Full Double-Rolled', Rate=55.83, Amount=55.83, LineCount =3),
         ]
-    my_invoice.add_line_items(my_line_items)
-    test = validation.validate(my_invoice)
+    test = validation.validate(my_invoice, my_line_items)
     assert(test == "Syntax_error (line 2) /Syntax_error (line 3) /")
 
 def test_semantic_1():
-    InvoiceNumber = 'INV009001'
-    my_invoice = CompleteInvoice(InvoiceNumber, 617.42, 855.93)
+    my_invoice = invoice2
     my_line_items = [
-        InvoiceLine(1, '000013-0001-F-P001', 'Opaque White Opal Fine Frit 1 lb jar', 12.42, 12.42), 
-        InvoiceLine(1, '000124-0030-F-FULL', 'Red Full Double-Rolled', 55.83, 55.83),
-        InvoiceLine(1, '000025-0030-F-FULL', 'Tangerine Full Double-Rolled', 55.83, 55.83),
-        InvoiceLine(1, '000104-0001-F-OZ05', 'Glacier Blue Opalescent, Fine Frit', 4.30, 4.30), #no 5 oz
-        InvoiceLine(1, '000113-0003-F-P005', 'White Opalescent Frit, 5-lb jar', 38.91, 38.91), #no 'coarse'
-        InvoiceLine(1, '000126-0107-F-TUBE', 'Spring Green Opalescent Stringer', 15.39, 15.39), #no '1mm'
-        InvoiceLine(1, '000100-0031-F-FULL', 'Black Double-Rolled Iridescent Rainbow', 55.83, 55.83)
+        InvoiceLineItem(InvoiceNumber='INV009001',Quantity=1, SuppliersID='000013-0001-F-P001', SuppliersDesc='Opaque White Opal Fine Frit 1 lb jar', Rate=12.42, Amount=12.42, LineCount =1), 
+        InvoiceLineItem(InvoiceNumber='INV009001',Quantity=1,SuppliersID= '000124-0030-F-FULL', SuppliersDesc='Red Full Double-Rolled', Rate=55.83, Amount=55.83, LineCount =2),
+        InvoiceLineItem(InvoiceNumber='INV009001',Quantity=1, SuppliersID='000025-0030-F-FULL', SuppliersDesc='Tangerine Full Double-Rolled', Rate=55.83, Amount=55.83, LineCount =3),
+        InvoiceLineItem(InvoiceNumber='INV009001',Quantity=1, SuppliersID='000104-0001-F-OZ05', SuppliersDesc='Glacier Blue Opalescent, Fine Frit', Rate=4.30, Amount=4.30, LineCount =4), #no 5 oz
+        InvoiceLineItem(InvoiceNumber='INV009001',Quantity=1,SuppliersID= '000113-0003-F-P005', SuppliersDesc='White Opalescent Frit, 5-lb jar', Rate=38.91, Amount=38.91, LineCount =5), #no 'coarse'
+        InvoiceLineItem(InvoiceNumber='INV009001',Quantity=1,SuppliersID= '000126-0107-F-TUBE', SuppliersDesc='Spring Green Opalescent Stringer', Rate=15.39, Amount=15.39, LineCount =6), #no '1mm'
+        InvoiceLineItem(InvoiceNumber='INV009001',Quantity=1, SuppliersID='000100-0031-F-FULL', SuppliersDesc='Black Double-Rolled Iridescent Rainbow', Rate=55.83, Amount=55.83, LineCount =7)
         ]
-    my_invoice.add_line_items(my_line_items)
-    test = validation.validate(my_invoice)
+    test = validation.validate(my_invoice, my_line_items)
     assert(test == "Semantic_error (line 4) /Semantic_error (line 5) /Semantic_error (line 6) /")
 
 
 def test_semantic_2():
-    InvoiceNumber = 'INV009001'
-    my_invoice = CompleteInvoice(InvoiceNumber, 617.42, 855.93)
+    my_invoice = invoice2
     my_line_items = [
-        InvoiceLine(1, '000013-0001-F-P001', 'Opaque White Opal Frit 1 lb jar', 12.42, 12.42), #no 'fine'
-        InvoiceLine(1, '000124-0030-F-FULL', 'Red Full', 55.83, 55.83), #no 'double-rolled'
-        InvoiceLine(1, '000025-0030-F-FULL', 'Tangerine Full Double-Rolled', 55.83, 55.83),
-        InvoiceLine(1, '000104-0001-F-OZ05', 'Glacier Blue Opalescent, Fine Frit 5-oz jar', 4.30, 4.30),
-        InvoiceLine(1, '000113-0003-F-P005', 'White Opalescent Coarse Frit, 5-lb jar', 38.91, 38.91), 
-        InvoiceLine(1, '000126-0107-F-TUBE', 'Spring Green Opalescent 1mm', 15.39, 15.39), #no 'stringer'
-        InvoiceLine(1, '000100-0031-F-FULL', 'Black Double-Rolled Rainbow', 55.83, 55.83) #no 'irid'
+        InvoiceLineItem(InvoiceNumber='INV009001',Quantity=1, SuppliersID='000013-0001-F-P001', SuppliersDesc='Opaque White Opal Frit 1 lb jar', Rate=12.42, Amount=12.42, LineCount =1), #no 'fine'
+        InvoiceLineItem(InvoiceNumber='INV009001',Quantity=1, SuppliersID='000124-0030-F-FULL', SuppliersDesc='Red Full', Rate=55.83, Amount=55.83, LineCount =2), #no 'double-rolled'
+        InvoiceLineItem(InvoiceNumber='INV009001',Quantity=1, SuppliersID='000025-0030-F-FULL', SuppliersDesc='Tangerine Full Double-Rolled', Rate=55.83, Amount=55.83,LineCount =3),
+        InvoiceLineItem(InvoiceNumber='INV009001',Quantity=1, SuppliersID='000104-0001-F-OZ05', SuppliersDesc='Glacier Blue Opalescent, Fine Frit 5-oz jar', Rate=4.30, Amount=4.30, LineCount =4),
+        InvoiceLineItem(InvoiceNumber='INV009001',Quantity=1, SuppliersID='000113-0003-F-P005', SuppliersDesc='White Opalescent Coarse Frit, 5-lb jar', Rate=38.91, Amount=38.91, LineCount =5), 
+        InvoiceLineItem(InvoiceNumber='INV009001',Quantity=1, SuppliersID='000126-0107-F-TUBE', SuppliersDesc='Spring Green Opalescent 1mm', Rate=15.39, Amount=15.39, LineCount =6), #no 'stringer'
+        InvoiceLineItem(InvoiceNumber='INV009001',Quantity=1, SuppliersID='000100-0031-F-FULL', SuppliersDesc='Black Double-Rolled Rainbow', Rate=55.83, Amount=55.83, LineCount =7) #no 'irid'
         ]
-    my_invoice.add_line_items(my_line_items)
-    test = validation.validate(my_invoice)
+    test = validation.validate(my_invoice, my_line_items)
     assert(test == "Semantic_error (line 1) /Semantic_error (line 2) /Semantic_error (line 6) /Semantic_error (line 7) /")
 
 def test_semantic_3():
-    InvoiceNumber = 'INV009001'
-    my_invoice = CompleteInvoice(InvoiceNumber, 617.42, 855.93)
+    my_invoice = invoice2
     my_line_items = [
-        InvoiceLine(1, '001116-0002-F-P001', 'Opaque White Opal Frit 1lb jar', 12.42, 12.42), #no 'med'
-        InvoiceLine(1, '001116-0030-F-FULL', 'Turquoise Blue Transparent Full', 55.83, 55.83), #no 'double-rolled'
-        InvoiceLine(1, '000025-0030-F-FULL', 'Tangerine Full Double-Rolled', 55.83, 55.83),
-        InvoiceLine(1, '000104-0001-F-OZ05', 'Glacier Blue Opalescent, Fine 5-oz jar', 4.30, 4.30), # no 'frit'
-        InvoiceLine(1, '000113-0003-F-P001', 'White Opalescent Coarse Frit, 1-lb jar', 38.91, 38.91), 
-        InvoiceLine(1, '000126-0272-F-TUBE', 'Spring Green Opalescent 2mm Stringer', 15.39, 15.39), 
-        InvoiceLine(1, '001101-0031-F-FULL', 'Clear Trans Double-rolled Iridescent', 55.83, 55.83) #no 'rainbow'
+        InvoiceLineItem(InvoiceNumber='INV009001',Quantity=1, SuppliersID='001116-0002-F-P001', SuppliersDesc='Opaque White Opal Frit 1lb jar', Rate=12.42, Amount=12.42, LineCount =1), #no 'med'
+        InvoiceLineItem(InvoiceNumber='INV009001',Quantity=1, SuppliersID='001116-0030-F-FULL', SuppliersDesc='Turquoise Blue Transparent Full', Rate=55.83, Amount=55.83, LineCount =2), #no 'double-rolled'
+        InvoiceLineItem(InvoiceNumber='INV009001',Quantity=1, SuppliersID='000025-0030-F-FULL', SuppliersDesc='Tangerine Full Double-Rolled', Rate=55.83, Amount=55.83, LineCount =3),
+        InvoiceLineItem(InvoiceNumber='INV009001',Quantity=1, SuppliersID='000104-0001-F-OZ05', SuppliersDesc='Glacier Blue Opalescent, Fine 5-oz jar', Rate=4.30, Amount=4.30, LineCount =4), # no 'frit'
+        InvoiceLineItem(InvoiceNumber='INV009001',Quantity=1, SuppliersID='000113-0003-F-P001', SuppliersDesc='White Opalescent Coarse Frit, 1-lb jar', Rate=38.91, Amount=38.91, LineCount =5), 
+        InvoiceLineItem(InvoiceNumber='INV009001',Quantity=1, SuppliersID='000126-0272-F-TUBE', SuppliersDesc='Spring Green Opalescent 2mm Stringer', Rate=15.39, Amount=15.39, LineCount =6), 
+        InvoiceLineItem(InvoiceNumber='INV009001',Quantity=1, SuppliersID='001101-0031-F-FULL', SuppliersDesc='Clear Trans Double-rolled Iridescent', Rate=55.83, Amount=55.83, LineCount =7) #no 'rainbow'
         ]
-    my_invoice.add_line_items(my_line_items)
-    test = validation.validate(my_invoice)
+    test = validation.validate(my_invoice, my_line_items)
     assert(test == "Semantic_error (line 1) /Semantic_error (line 2) /Semantic_error (line 4) /Semantic_error (line 7) /")
 
 def test_semantic_4():
-    InvoiceNumber = 'INV009001'
-    my_invoice = CompleteInvoice(InvoiceNumber, 617.42, 855.93)
+    my_invoice = invoice2
     my_line_items = [
-        InvoiceLine(1, '001116-0002-F-P001', 'Opaque White Opal Medium Frit, 1lb jar', 12.42, 12.42), 
-        InvoiceLine(1, '001116-0030-F-FULL', 'Turquoise Blue Transparent Double-Rolled Full', 55.83, 55.83), 
-        InvoiceLine(1, '000025-0030-F-FULL', 'Tangerine Full', 55.83, 55.83), #no double-rolled
-        InvoiceLine(1, '000104-0001-F-OZ05', 'Glacier Blue Opalescent, Fine Frit 5-oz jar', 4.30, 4.30),
-        InvoiceLine(1, '000113-0003-F-P001', 'White Opalescent Coarse Frit', 38.91, 38.91), #no 1-lb
-        InvoiceLine(1, '000126-0272-F-TUBE', 'Spring Green Opalescent stringer', 15.39, 15.39), #no '2mm'
-        InvoiceLine(1, '001101-0031-F-FULL', 'Clear Trans Double-rolled Iridescent rainbow', 55.83, 55.83)
+        InvoiceLineItem(InvoiceNumber='INV009001',Quantity=1, SuppliersID='001116-0002-F-P001', SuppliersDesc='Opaque White Opal Medium Frit, 1lb jar', Rate=12.42, Amount=12.42, LineCount =1), 
+        InvoiceLineItem(InvoiceNumber='INV009001',Quantity=1, SuppliersID='001116-0030-F-FULL', SuppliersDesc='Turquoise Blue Transparent Double-Rolled Full', Rate=55.83, Amount=55.83, LineCount =2), 
+        InvoiceLineItem(InvoiceNumber='INV009001',Quantity=1, SuppliersID='000025-0030-F-FULL', SuppliersDesc='Tangerine Full', Rate=55.83, Amount=55.83, LineCount =3), #no double-rolled
+        InvoiceLineItem(InvoiceNumber='INV009001',Quantity=1, SuppliersID='000104-0001-F-OZ05', SuppliersDesc='Glacier Blue Opalescent, Fine Frit 5-oz jar', Rate=4.30, Amount=4.30, LineCount =4),
+        InvoiceLineItem(InvoiceNumber='INV009001',Quantity=1, SuppliersID='000113-0003-F-P001', SuppliersDesc='White Opalescent Coarse Frit', Rate=38.91, Amount=38.91, LineCount =5), #no 1-lb
+        InvoiceLineItem(InvoiceNumber='INV009001',Quantity=1, SuppliersID='000126-0272-F-TUBE', SuppliersDesc='Spring Green Opalescent stringer', Rate=15.39, Amount=15.39, LineCount =6), #no '2mm'
+        InvoiceLineItem(InvoiceNumber='INV009001',Quantity=1, SuppliersID='001101-0031-F-FULL', SuppliersDesc='Clear Trans Double-rolled Iridescent rainbow', Rate=55.83, Amount=55.83, LineCount =7)
         ]
-    my_invoice.add_line_items(my_line_items)
-    test = validation.validate(my_invoice)
+    test = validation.validate(my_invoice, my_line_items)
     assert(test == "Semantic_error (line 3) /Semantic_error (line 5) /Semantic_error (line 6) /")
 
 def test_arithmetic():
-    InvoiceNumber = 'INV009001'
-    my_invoice = CompleteInvoice(InvoiceNumber, 617.42, 796.42)
+    my_invoice = invoice3
     my_line_items = [
-        InvoiceLine(2, '000013-0001-F-P001', 'Opaque White Opal Fine Frit, 1lb jar', 12.42, 12.42),
-        InvoiceLine(1, '000024-0030-F-FULL', 'Tomato Red Full double-rolled', 55.38, 55.83),
-        InvoiceLine(1, '000025-0030-F-FULL', 'Tangerine Full Double-Rolled', 55.83, 110.76),
+        InvoiceLineItem(InvoiceNumber='INV009001',Quantity=2, SuppliersID='000013-0001-F-P001', SuppliersDesc='Opaque White Opal Fine Frit, 1lb jar', Rate=12.42, Amount=12.42, LineCount =1),
+        InvoiceLineItem(InvoiceNumber='INV009001',Quantity=1, SuppliersID='000024-0030-F-FULL', SuppliersDesc='Tomato Red Full double-rolled', Rate=55.38, Amount=55.83, LineCount =2),
+        InvoiceLineItem(InvoiceNumber='INV009001',Quantity=1, SuppliersID='000025-0030-F-FULL', SuppliersDesc='Tangerine Full Double-Rolled', Rate=55.83, Amount=110.76, LineCount =3),
         ]
-    my_invoice.add_line_items(my_line_items)
-    test = validation.validate(my_invoice)
+    test = validation.validate(my_invoice,my_line_items)
     assert(test == "Arithmetic_line_error (line 1) /Arithmetic_line_error (line 2) /Arithmetic_line_error (line 3) /Arithmetic_total_error /")
 
 def test_multiples():
-    InvoiceNumber = 'INV009001'
-    my_invoice = CompleteInvoice(InvoiceNumber, 617.42, 3729.63)
+    my_invoice = invoice4
     my_line_items = [
-        InvoiceLine(1, '13-01', 'Opaque White Opal Fine Frit', 12.42, 22.42), #syntax and arithmetic
-        InvoiceLine(1, '000024-0030-F-FULL', 'Tomato Red Full', 55.38, 55.83), #semantic and arithmetic
-        InvoiceLine(1, '001116-0002-F-P001', 'Opaque White Opal Frit', 12.42, 12.42) #two semantic errors
+        InvoiceLineItem(InvoiceNumber='INV009001',Quantity=1, SuppliersID='13-01', SuppliersDesc='Opaque White Opal Fine Frit', Rate=12.42, Amount=22.42, LineCount =1), #syntax and arithmetic
+        InvoiceLineItem(InvoiceNumber='INV009001',Quantity=1, SuppliersID='000024-0030-F-FULL', SuppliersDesc='Tomato Red Full', Rate=55.38, Amount=55.83, LineCount =2), #semantic and arithmetic
+        InvoiceLineItem(InvoiceNumber='INV009001',Quantity=1, SuppliersID='001116-0002-F-P001', SuppliersDesc='Opaque White Opal Frit', Rate=12.42, Amount=12.42, LineCount =3) #two semantic errors
         ]
-    my_invoice.add_line_items(my_line_items)
-    test = validation.validate(my_invoice)
+    test = validation.validate(my_invoice, my_line_items)
     assert(test == "Syntax_error (line 1) /Arithmetic_line_error (line 1) /Semantic_error (line 2) /Arithmetic_line_error (line 2) /Semantic_error (line 3) /Semantic_error (line 3) /Arithmetic_total_error /")
 
  
+if __name__ == "__main__":
+    test_syntax()
+    test_semantic_1()
+    test_semantic_2()
+    test_semantic_3()
+    test_semantic_4()
+    test_arithmetic()
+    test_multiples()
+    print("test complete")
