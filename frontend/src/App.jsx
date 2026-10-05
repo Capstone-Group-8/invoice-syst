@@ -1,3 +1,11 @@
+/*
+ * Capstone Group 8 - Invoice Processing System
+ * Name: Seth Z. Roth
+ * Date: October 4, 2026
+ * Role: Interface Designer
+ * Contribution: React invoice upload integration and human-in-the-loop review interface
+ */
+
 import { useEffect, useState } from "react";
 //import { createRoot } from 'react-dom/client';
 

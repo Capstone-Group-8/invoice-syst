@@ -1,8 +1,10 @@
 """
-Invoice upload integration.
-
-Connects the OCR/parser output to the application's schemas,
-validation system, and human-review workflow.
+Capstone Group 8 - Invoice Processing System
+Name: Seth Z. Roth
+Date: October 4, 2026
+Role: Interface Designer
+Contribution: Integrated PDF upload processing with OCR, validation,
+and the human-in-the-loop invoice review workflow.
 """
 
 import validation
