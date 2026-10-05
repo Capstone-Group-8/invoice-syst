@@ -549,63 +549,6 @@ def parse_invoice_metadata(rows):
             metadata["TotalAmt"] = parse_number(match.group(1))
 
     return metadata
-    metadata = {
-        "InvoiceNumber": "",
-        "OrderDate": None,
-        "ShipDate": None,
-        "DueDate": None,
-        "ShippingHandling": -0.1,
-        "TotalAmt": -0.1,
-        "Supplier": "",
-    }
-
-    for row in rows:
-        text = " ".join(
-            clean_text(item.get("text", ""))
-            for item in row
-        )
-
-        if not metadata["InvoiceNumber"]:
-            match = re.search(r"\bINV\d+\b", text, re.IGNORECASE)
-            if match:
-                metadata["InvoiceNumber"] = match.group(0)
-
-        match = re.search(
-            r"Due\s*Date\s*:\s*(\d{4}-\d{2}-\d{2})",
-            text,
-            re.IGNORECASE,
-        )
-        if match:
-            metadata["DueDate"] = match.group(1)
-
-        match = re.search(
-            r"Order\s*Date\s+.*?(\d{4}-\d{2}-\d{2})",
-            text,
-            re.IGNORECASE,
-        )
-        if match:
-            metadata["OrderDate"] = match.group(1)
-
-        match = re.search(
-            r"Ship\s*Date\s+.*?(\d{4}-\d{2}-\d{2})",
-            text,
-            re.IGNORECASE,
-        )
-        if match:
-            metadata["ShipDate"] = match.group(1)
-
-        if "Bullseye Glass Co." in text:
-            metadata["Supplier"] = "Bullseye Glass Co."
-
-        match = re.search(
-            r"Total\s+USD\s+\$?([\d,]+\.\d{2})",
-            text,
-            re.IGNORECASE,
-        )
-        if match:
-            metadata["TotalAmt"] = parse_number(match.group(1))
-
-    return metadata
 
 
 def parse_invoice_fields(rows):
