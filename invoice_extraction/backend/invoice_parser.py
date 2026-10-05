@@ -472,6 +472,89 @@ def parse_invoice_metadata(rows):
         "Supplier": "",
     }
 
+    # Convert each visual OCR row into searchable text once.
+    row_texts = [
+        " ".join(
+            clean_text(item.get("text", ""))
+            for item in row
+        )
+        for row in rows
+    ]
+
+    date_pattern = re.compile(r"\b(\d{4}-\d{2}-\d{2})\b")
+
+    for index, text in enumerate(row_texts):
+
+        if not metadata["InvoiceNumber"]:
+            match = re.search(r"\bINV\d+\b", text, re.IGNORECASE)
+            if match:
+                metadata["InvoiceNumber"] = match.group(0)
+
+        # Due Date normally appears on the same OCR row.
+        match = re.search(
+            r"Due\s*Date\s*:?\s*(\d{4}-\d{2}-\d{2})",
+            text,
+            re.IGNORECASE,
+        )
+        if match:
+            metadata["DueDate"] = match.group(1)
+
+        # Order Date may be on the same row or the following OCR row.
+        match = re.search(
+            r"Order\s*Date\s+.*?(\d{4}-\d{2}-\d{2})",
+            text,
+            re.IGNORECASE,
+        )
+        if match:
+            metadata["OrderDate"] = match.group(1)
+        elif (
+            metadata["OrderDate"] is None
+            and re.search(r"\bOrder\s*Date\b", text, re.IGNORECASE)
+            and index + 1 < len(row_texts)
+        ):
+            next_match = date_pattern.search(row_texts[index + 1])
+            if next_match:
+                metadata["OrderDate"] = next_match.group(1)
+
+        # Ship Date may be on the same row or the following OCR row.
+        match = re.search(
+            r"Ship\s*Date\s+.*?(\d{4}-\d{2}-\d{2})",
+            text,
+            re.IGNORECASE,
+        )
+        if match:
+            metadata["ShipDate"] = match.group(1)
+        elif (
+            metadata["ShipDate"] is None
+            and re.search(r"\bShip\s*Date\b", text, re.IGNORECASE)
+            and index + 1 < len(row_texts)
+        ):
+            next_match = date_pattern.search(row_texts[index + 1])
+            if next_match:
+                metadata["ShipDate"] = next_match.group(1)
+
+        if "Bullseye Glass Co." in text:
+            metadata["Supplier"] = "Bullseye Glass Co."
+
+        match = re.search(
+            r"Total\s+USD\s+\$?([\d,]+\.\d{2})",
+            text,
+            re.IGNORECASE,
+        )
+        if match:
+            metadata["TotalAmt"] = parse_number(match.group(1))
+
+    return metadata
+    metadata = {
+        "InvoiceNumber": "",
+        "OrderDate": None,
+        "ShipDate": None,
+        "DueDate": None,
+        "ShippingHandling": -0.1,
+        "TotalAmt": -0.1,
+        "Supplier": "",
+    }
+
     for row in rows:
         text = " ".join(
             clean_text(item.get("text", ""))

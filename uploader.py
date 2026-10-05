@@ -1,94 +1,146 @@
-'''
-Created on Sep 4, 2026
+"""
+Invoice upload integration.
 
-@author: Sally Little
-'''
+Connects the OCR/parser output to the application's schemas,
+validation system, and human-review workflow.
+"""
+
 import validation
-import inventory_updater
+
 from inv import CompleteInvoice, InvoiceLine
 import invoice_extraction.backend.parser_main as parser_main
-from datetime import date
 from dateutil.parser import parse
+
 from schemas import (
     InvoiceCreate,
     InvoiceLineItemCreate,
-    InvoiceLineItemUpdate,
-    InvoiceUpdate,
 )
 
-def upload(target_path): # -> tuple[InvoiceCreate, list[InvoiceLineItemCreate], list[tuple[float, float]]]:
+
+def upload(target_path):
+    """
+    Process an uploaded invoice through OCR and validation.
+
+    Validation errors do not stop the upload because imperfect OCR
+    results are expected to be reviewed and corrected in the UI.
+    """
     metadata, lineitems, confidences, validatable_invoice = use_ocr(target_path)
+
     result = validation.validate(validatable_invoice)
-    if result == "200":
-        return metadata, lineitems, confidences
-    else:
-        pass #parse errors and pass all back to front end
+
+    if result != "200":
+        print("\nInvoice requires human review:")
+        print(result)
+
+    return metadata, lineitems, confidences
 
 
-def use_ocr(filepath):# -> tuple[InvoiceCreate, list[InvoiceLineItemCreate], list[tuple[float, float]], CompleteInvoice]:
+def use_ocr(filepath):
     """
-    This is the connector to the OCR module. It is the only function that is tightly coupled with the same.
+    Convert OCR/parser output into application schema objects.
     """
+
     payload = parser_main.receive_file(filepath)
-    """
-    receive_file returns structure of the shape:
-    {
-        "Invoice": 
-            {
-                "InvoiceNumber": str,
-                "OrderDate": str,
-                "ShipDate": str,
-                "DueDate": str,
-                "ShippingHandling": float, (negative if not supplied)
-                "TotalAmt": float, (negative if not supplied)
-                "Supplier": str,
-            }
-        "InvoiceLineItems": [{
-                        "SuppliersID": str,
-                        "Description": str,
-                        "Quantity": int, (theoretically)
-                        "HSCode": str,
-                        "Rate": float,
-                        "Amount": float,
-                        "OCRConfidence": float,
-                        "Confidence": float,
-                        "LineCount": int,
-                    }]
-    }
-    """
-    
-    metadata = payload.Invoice # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
-    InvoiceNumber=metadata.InvoiceNumber
-    ShippingHandling=metadata.ShippingHandling
-    TotalAmt=metadata.TotalAmt
+
+    if not isinstance(payload, dict):
+        raise ValueError("OCR parser did not return the expected invoice data.")
+
+    metadata = payload.get("Invoice", {})
+    parsed_lineitems = payload.get("InvoiceLineItems", [])
+
+    invoice_number = metadata.get("InvoiceNumber", "")
+
+    if not invoice_number:
+        raise ValueError("OCR could not determine the invoice number.")
+
+    if not metadata.get("OrderDate"):
+        raise ValueError("OCR could not determine the order date.")
+
+    if not metadata.get("ShipDate"):
+        raise ValueError("OCR could not determine the ship date.")
+
+    if not metadata.get("DueDate"):
+        raise ValueError("OCR could not determine the due date.")
+
+    shipping_handling = metadata.get("ShippingHandling", 0)
+
+    if shipping_handling is None or shipping_handling < 0:
+        shipping_handling = 0.0
+
+    total_amt = metadata.get("TotalAmt", 0)
+
+    if total_amt is None or total_amt < 0:
+        total_amt = 0.0
+
     invoice = InvoiceCreate(
-        InvoiceNumber=InvoiceNumber,
-        OrderDate=parse(metadata.OrderDate).date(),
-        ShipDate=parse(metadata.ShipDate).date(),
-        DueDate=parse(metadata.DueDate).date(),
-        SalesOrderNo=metadata.SalesOrderNo,
-        ShippingHandling=ShippingHandling,
-        TotalAmt=TotalAmt,
-        Supplier=metadata.Supplier
+        InvoiceNumber=invoice_number,
+        OrderDate=parse(metadata["OrderDate"]).date(),
+        ShipDate=parse(metadata["ShipDate"]).date(),
+        DueDate=parse(metadata["DueDate"]).date(),
+        SalesOrderNo=metadata.get("SalesOrderNo", ""),
+        ShippingHandling=float(shipping_handling),
+        TotalAmt=float(total_amt),
+        Supplier=metadata.get("Supplier", ""),
     )
-    validatable_invoice = CompleteInvoice(InvoiceNumber, ShippingHandling, TotalAmt)
+
+    validatable_invoice = CompleteInvoice(
+        invoice_number,
+        float(shipping_handling),
+        float(total_amt),
+    )
+
     new_invoice_line_items = []
     confidence_intervals = []
-    for item in payload.InvoiceLineItems: # pyright: ignore[reportOptionalMemberAccess,reportAttributeAccessIssue]
-        new_item =InvoiceLineItemCreate(
-            InvoiceNumber=metadata.InvoiceNumber,
-            Quantity=int(item.Quantity),
-            SuppliersID=item.SuppliersID,
-            SuppliersDesc=item.Description,
-            Rate= item.Rate,
-            Amount=item.Amount,
-            LineCount=item.LineCount,
+
+    for item in parsed_lineitems:
+        quantity = item.get("Quantity")
+
+        if quantity is None:
+            quantity = -1
+
+        rate = item.get("Rate")
+
+        # A missing OCR value must still be numeric for the
+        # application/database. Zero flags it for human review.
+        if rate is None:
+            rate = 0.0
+
+        amount = item.get("Amount")
+
+        if amount is None:
+            amount = 0.0
+
+        new_item = InvoiceLineItemCreate(
+            InvoiceNumber=invoice_number,
+            Quantity=int(quantity),
+            SuppliersID=item.get("SuppliersID", ""),
+            SuppliersDesc=item.get("Description", ""),
+            Rate=float(rate),
+            Amount=float(amount),
+            LineCount=item.get("LineCount"),
         )
-        new_validatable_item = InvoiceLine(item.Quantity, item.SuppliersID, item.SuppliersDesc, item.Rate, item.Amount)
+
+        new_validatable_item = InvoiceLine(
+            int(quantity),
+            item.get("SuppliersID", ""),
+            item.get("Description", ""),
+            float(rate),
+            float(amount),
+        )
+
         validatable_invoice.add_line_item(new_validatable_item)
         new_invoice_line_items.append(new_item)
-        confidence_intervals.append((item.OCRConfidence, item.Confidence))
-    return invoice, new_invoice_line_items, confidence_intervals, validatable_invoice
 
+        confidence_intervals.append(
+            (
+                float(item.get("OCRConfidence", 0) or 0),
+                float(item.get("Confidence", 0) or 0),
+            )
+        )
 
-
+    return (
+        invoice,
+        new_invoice_line_items,
+        confidence_intervals,
+        validatable_invoice,
+    )
