@@ -1,4 +1,4 @@
-from datetime import date, time
+from datetime import date, time, datetime
 from pydantic import BaseModel
 
 
@@ -83,7 +83,8 @@ class ChangeLogBase(BaseModel):
     OldValue: str
     NewValue: str
     Author: str | None = None
-    Timestamp: time | None = None
+    Timestamp: datetime = datetime.now()
+    #Timestamp: time | None = None
 
 class ChangeLogCreate(ChangeLogBase):
     pass

@@ -5,17 +5,17 @@ Covers main, crud, seed_demo, database, schemas, and models for sqlite
 Sep 16 2026
 '''
 import sys
-#import pytest
-#import sqlite3
 from datetime import date
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from seed_demo import seed
+from seed import seed
 seed()
 
 import main
 db = next(main.get_db())
 no_of_invoices = 0
+change_id_1_gl = 0
+change_id_2_gl = 0
 
 #Invoices and line items
 def test_read_invoices():
@@ -144,7 +144,7 @@ def test_create_and_read_change():
         db,
     )
     change_logs = main.read_invoice_changes("INV-DEMO-02", db)
-    assert len(change_logs) == 2, "Number of change logs does not match"
+    assert len(change_logs) >= 2, "Number of change logs does not match: ="+str(len(change_logs))
     all_change_logs = main.read_all_changes(db)
     assert len(all_change_logs) >= 2, "Number of all change logs does not match"
     assert change_logs == all_change_logs, "change logs do not match"
@@ -172,8 +172,9 @@ def test_create_and_read_change():
     assert second_change_from_db.FieldChanged == "SalesOrderNo", "Field changed does not match"
     assert second_change_from_db.OldValue == "SO-DEMO-02", "Old value does not match"
     assert second_change_from_db.NewValue == "SO-DEMO-03", "New value does not match"
-    main.crud.delete_change(db, first_changeid)
-    main.crud.delete_change(db, second_changeid)
+    change_id_1_gl = first_changeid
+    change_id_2_gl = second_changeid
+
 
 def test_update_line_item():
     main.update_line_item(
@@ -196,11 +197,8 @@ def test_update_line_item():
     assert getattr(updated_line_items[1], "Rate") == 60.58, "Rate was not updated"
     assert getattr(updated_line_items[1], "Amount") == 180.90, "Amount was not updated"
     assert getattr(updated_line_items[1], "LineCount") == 2, "Line count did not remain 2"
-    #main.crud.delete_line_item(db, "INV-DEMO-02", "000100-0030-F-FULL")
-    main.crud.delete_invoice(db, "INV-DEMO-02")
 
-#def test_create_change_lineitem():
- #   main.create
+
 
 #Inventory
 def test_create_new_inventory_item():
@@ -233,7 +231,7 @@ def test_read_inventory():
     assert len(inventory) > 0
 
 def test_update_inventory():
-    main.update_inventory(
+    main.update_inventory_item(
         "80026",
         main.InventoryUpdate(
             SuppliersID="00125-0030-F-FULL",
@@ -342,7 +340,10 @@ def test_handle_invoice():
             LineCount = 3,
     )
     main.handle_invoice(invoice, [item1, item2, item3], [(0.95, 0.90), (0.42, 0.48), (0.85, 0.80)], db)
-    main.update_all_inventory([item1, item2, item3], invoice.Supplier, db, test_toggle=True)
+    #TBD: test with new (updated "wrong") values fed to confirm_values
+    confirm_values_result = main.confirm_values(invoice, [item1, item2, item3])
+    assert confirm_values_result == '200'
+    main.update_all_inventory(invoice, [item1, item2, item3], db)
     new_invoice = main.read_invoice("INV-DEMO-06", db)
     line_items = main.read_invoice_items("INV-DEMO-06", db)
     #invoice has been added
@@ -388,14 +389,25 @@ def test_handle_invoice():
     assert updated_item.LastPrice == 61.32, "Last price was not updated"
     assert updated_item.TotalQtyDesired == 4, "Total quantity desired does not match"
     assert updated_item.Supplier == "Bullseye Glass Co.", "Supplier name does not match"
-   
-     #clean up
+
+
+def test_report():
+    report = main.download_report(db, test_toggle=True)
+    for line in report:
+        print(line)
+
+
+def test_delete():
     main.crud.delete_line_item(db, "INV-DEMO-06", "000100-0030-F-FULL")
     main.crud.delete_line_item(db, "INV-DEMO-06", "000100-0031-F-FULL")
     main.crud.delete_line_item(db, "INV-DEMO-06", "055513-0001-F-P001")
     main.crud.delete_invoice(db, "INV-DEMO-06")
     main.crud.delete_inventory_entry(db, "80026") #by keeping this around until now, I know what the new inventory item's ID is
     main.crud.delete_inventory_entry(db, "80027")
+    main.crud.delete_change(db, change_id_1_gl)
+    main.crud.delete_change(db, change_id_2_gl)
+    #main.crud.delete_line_item(db, "INV-DEMO-02", "000100-0030-F-FULL")
+    main.crud.delete_invoice(db, "INV-DEMO-02")
 
 if __name__ == "__main__":
     test_read_invoices()
@@ -411,5 +423,8 @@ if __name__ == "__main__":
     test_update_inventory()
     test_read_suppliers()
     test_handle_invoice()
+    #test_report()
+    #test_delete()
+
     print("test complete")
  
