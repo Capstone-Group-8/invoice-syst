@@ -22,6 +22,7 @@ function App() {
   const [uploadMessage, setUploadMessage] = useState("");
   const [originalInvoice, setOriginalInvoice] = useState(null);
   const [originalLineItems, setOriginalLineItems] = useState([]);
+  const [refresh, setRefresh] = useState(0);
 
 
   useEffect(() => {
@@ -86,6 +87,7 @@ function App() {
         temp[line_count] = { ...temp[line_count], [actual_field]: value };
         console.log("temp" + temp);
         setSelectedLineItems(temp);
+        setRefresh(refresh + 1);
         // Using prevState here appears to convert the array to an object
         //which causes Map to stop working.      
    /*      setSelectedLineItems((prevState) => ({          
@@ -93,8 +95,9 @@ function App() {
         [actual_field]: value
       })); */
     }
-  console.log("collectUpdate done",selectedLineItems);
+  //console.log("collectUpdate done",selectedLineItems);
   }
+
 
   async function uploadInvoice(e) {
     e.preventDefault();
@@ -111,7 +114,7 @@ function App() {
     setUploadMessage("Processing invoice...");
 
     try {
-      const response = await fetch(`${API}/upload`, {
+      const response = await fetch(`${API}/upload`, { //main.upload_file
         method: "POST",
         body: formData,
       });
@@ -121,11 +124,15 @@ function App() {
         throw new Error(errorText || "Upload failed");
       }
 
-      await response.json();
+      const result = await response.json(); //should be metadata, lineitems, confidence_intervals
 
       setUploadMessage("Invoice processed successfully.");
 
       window.location.reload(false);
+      setSelectedLineItems(result.lineitems);
+      setConfidenceIntervals(true);
+      editInvoice(result.metadata);
+
     } catch (error) {
       console.error(error);
       setUploadMessage("Unable to process invoice.");
@@ -133,6 +140,8 @@ function App() {
       setUploading(false);
     }
   }
+
+
 
   async function update_form(e) {
     e.preventDefault();
@@ -147,11 +156,11 @@ function App() {
         LineItems:JSON.stringify(selectedLineItems)
       }
     }).then(res => res.json())
-    //res is errors
+    //res is errors or '200'
     if (res !== "200") {
       // Handle validation errors
       return res;
-    }
+    } //else continue
     const invoiceNum = originalInvoice.InvoiceNumber;
     
     //log the changes to the main invoice
@@ -206,8 +215,9 @@ function App() {
         });
       }
       });
-        //update line items in lineitem table
-    fetch(`${API}/invoices/${invoiceNum}/item.SuppliersID`, {
+    
+     //update line items in lineitem table
+    fetch(`${API}/invoices/${invoiceNum}/lineitems/${item.SuppliersID}`, {
       method: 'PUT',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify(item)
@@ -216,7 +226,7 @@ function App() {
     .catch(() => setStatus("Invoice update failed."));
     });
 
-    //pass control back to main.py
+    //pass control back to main.py to make inventory changes indicated by invoice
     fetch(`${API}/update_all_inventory`, 
     {method: 'POST',
       headers: {'Content-Type': 'application/json'},
@@ -224,13 +234,14 @@ function App() {
         Invoice: JSON.stringify(selectedInvoice),
         LineItems:JSON.stringify(selectedLineItems)
       }
-    }).then(res => res.json())
+    }).then(res => res.json()) //ideally if res.json != '200' raise exception
     .then(() => {
         window.location.reload(false);
     })
     .catch(() => setStatus("Inventory refresh failed."));
   setEditable(false);
   }
+
 
 async function uploadInvoice(e) {
   e.preventDefault();
@@ -272,10 +283,16 @@ async function uploadInvoice(e) {
     } finally {
       setUploading(false);
     }
-  
-
-
 }
+
+function downloadReport() {
+  setRefresh(refresh + 1);
+  fetch(`${API}/download`)
+    .then((response) => {
+      if (!response.ok) throw new Error("Could not download report");
+        return response.json();
+      });
+  }
 
   return (   
     <main className="page">
@@ -311,28 +328,10 @@ async function uploadInvoice(e) {
       </section>
 
       <section className="panel">
-        <h2>Upload Invoice</h2>
-
-        <form onSubmit={uploadInvoice}>
-          <input
-            type="file"
-            accept="application/pdf"
-            onChange={(e) => {
-              setSelectedFile(e.target.files[0]);
-              setUploadMessage("");
-            }}
-          />
-
-          <button type="submit" disabled={uploading}>
-            {uploading ? "Processing..." : "Upload PDF"}
-          </button>
-        </form>
-
-        {uploadMessage && <p>{uploadMessage}</p>}
-      </section>
-
-      <section className="panel">
         <h2>Invoices</h2>
+        <button onClick={() => downloadReport()}>
+          Download Report
+        </button>
 
         {invoices.length > 0 && (
           <div className="table-wrap">
@@ -505,8 +504,17 @@ async function uploadInvoice(e) {
                 </div>
 
                 <span>
-                  {item.Quantity} × ${Number(item.Rate).toFixed(2)} = $
-                  {Number(item.Amount).toFixed(2)}
+                  <input type="number" className="form-control"
+                  value={item.Quantity} required
+                  onChange={(e) => collectUpdate(item.LineCount + "-Quantity",e.target.value, true)}/>
+                  × 
+                  <input type="number" className="form-control"
+                  value={Number(item.Rate).toFixed(2)} required
+                  onChange={(e) => collectUpdate(item.LineCount + "-Rate",e.target.value, true)}/>
+                  = $
+                  <input type="number" className="form-control"
+                  value={Number(item.Amount).toFixed(2)} required
+                  onChange={(e) => collectUpdate(item.LineCount + "-Amount",e.target.value, true)}/>
                 </span>
               </div>
             ))

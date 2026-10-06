@@ -1,5 +1,6 @@
-from sqlalchemy import Column, Integer, String, Float, Date, Time
+from sqlalchemy import Column, Integer, String, Float, Date, Time, DateTime
 from database import Base
+from datetime import datetime
 
 class Inventory(Base):
     __tablename__ = "Inventory" 
@@ -53,5 +54,6 @@ class ChangeLog(Base):
     OldValue  = Column(String(50), nullable=False)
     NewValue = Column(String(50), nullable=False)
     Author = Column(String(120), nullable=True)
-    Timestamp = Column(Time, nullable=True)
+    #Timestamp = Column(Time, nullable=True)
+    Timestamp = Column(DateTime, nullable=True, default=datetime.now())
     ChangeID = Column(Integer, autoincrement= "auto", nullable=False, primary_key=True, index=True)
