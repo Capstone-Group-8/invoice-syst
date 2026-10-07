@@ -1,10 +1,9 @@
 '''
+Capstone Group 8 - Invoice Processing System
+Validates invoice line item data arithmetically, semantically, and syntactically.
+Author: Sally Little @slittle95
 Created on Aug 26, 2026
-
-@author: Sally Little
 '''
-
-#from inv import CompleteInvoice, InvoiceLine
 
 import re
 
@@ -29,19 +28,21 @@ def fail_line_arithmetic_validation(line, count):
 def fail_total_arithmetic_validation(invoice, subtotal):
     #rewrite this function to present the error to the user
     #and guess the correction?
-    print(f"Failed total validation:\nSubtotal ${subtotal} + shipping cost ${invoice.shipping} is not ${invoice.total}")
+    print(f"Failed total validation:\nSubtotal ${subtotal} + shipping cost ${invoice.ShippingHandling} is not ${invoice.TotalAmt}")
     return(f"Arithmetic_total_error /")
 
 
 def test_line_semantic_validation(line, group1, group3, count):
     def check_desc_for(keys):
-        desc = line.Description.lower()
+        desc = line.SuppliersDesc.lower()
+        if 'Invoice' in desc:
+            return(f"Semantic_error (line {count}) /")
         print("desc", desc)
         for key in keys:
             print("key", key)
             if key not in desc:
                 #print("fail")
-                fail_line_semantic_validation(keys, line.Description, count)
+                fail_line_semantic_validation(keys, line.SuppliersDesc, count)
                 return(f"Semantic_error (line {count}) /")
         #print("pass")
         return "200"
@@ -78,15 +79,14 @@ def test_line_semantic_validation(line, group1, group3, count):
     else:
         return '200'
 
-def validate(invoice):
-    line_items = invoice.line_items
+def validate(invoice, line_items): 
     subtotal = 0
     errors = ""
     count = 0
     for i in line_items:
         count += 1
         #test the regex
-        x = re.search(r"0[0-9]{5}-[0-9]{4}-[A-Z]-[A-Z0-9]{4}", i.SuppliersID)
+        x = re.search(r"0[0-9]{5}-[A-Z0-9]{4}-[A-Z]-[A-Z0-9]{4}", i.SuppliersID)
         if not x:
             errors += fail_line_syntactic_validation(i.SuppliersID, count)
         else:
@@ -102,12 +102,18 @@ def validate(invoice):
         if (i.Quantity * i.Rate != i.Amount):
             errors += fail_line_arithmetic_validation(i, count)
         subtotal += i.Amount
-    if (subtotal + invoice.shipping != invoice.total):
+    if (subtotal + invoice.ShippingHandling != invoice.TotalAmt):
         errors += fail_total_arithmetic_validation(invoice, subtotal)
     if (errors == ""):
         return "200"
     else:
+        # broken_out_errors = errors.split('/') #TBD but currently causing failures
+        # for err in broken_out_errors:
+        #     if err != "":
+        #         print(err)
         return errors
+
+
 '''
 0: InvoiceNumber
 1: Supplier

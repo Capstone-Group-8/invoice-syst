@@ -1,3 +1,8 @@
+"""
+Capstone Group 8 - Invoice Processing System
+Seeds a local database.
+Author: Seth. Z. Roth @sethzacharyross-a11y
+"""
 from datetime import date
 
 from database import SessionLocal, engine

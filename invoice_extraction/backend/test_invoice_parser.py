@@ -1,5 +1,6 @@
 """
 Test Invoice Extractor
+Author: Andres Ortiz Sanchez @PlanetaryOS
 """
 
 import os

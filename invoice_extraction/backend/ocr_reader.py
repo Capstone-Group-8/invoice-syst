@@ -1,13 +1,14 @@
 """
 Invoice Extractor
-Author: Andres Ortiz Sanchez
+Author: Andres Ortiz Sanchez @PlanetaryOS
 """
 
 import os
 import tempfile
 
 import easyocr
-import fitz
+#import fitz
+import pymupdf
 #uvicorn says to use import pymupdf instead of fitz, somebody plz test that
 import numpy as np
 from PIL import Image
@@ -45,7 +46,7 @@ def extract_text(path: str):
 
     if path.lower().endswith(".pdf"):
         with tempfile.TemporaryDirectory(prefix="invoice_ocr_", dir=TEMP_DIR) as tmp_dir:
-            with fitz.open(path) as doc:
+            with pymupdf.open(path) as doc:
                 for page_number, page in enumerate(doc, start=1):
                     pix = page.get_pixmap(dpi=200)
 
