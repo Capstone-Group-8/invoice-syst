@@ -98,49 +98,6 @@ function App() {
   }
 
 
-  async function uploadInvoice(e) {
-    e.preventDefault();
-
-    if (!selectedFile) {
-      setUploadMessage("Please select a PDF first.");
-      return;
-    }
-
-    const formData = new FormData();
-    formData.append("file", selectedFile);
-
-    setUploading(true);
-    setUploadMessage("Processing invoice...");
-
-    try {
-      const response = await fetch(`${API}/upload`, { //main.upload_file
-        method: "POST",
-        body: formData,
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(errorText || "Upload failed");
-      }
-
-      const result = await response.json(); //should be metadata, lineitems, confidence_intervals
-
-      setUploadMessage("Invoice processed successfully.");
-
-      window.location.reload(false);
-      setSelectedLineItems(result.lineitems);
-      setConfidenceIntervals(true);
-      editInvoice(result.metadata);
-
-    } catch (error) {
-      console.error(error);
-      setUploadMessage("Unable to process invoice.");
-    } finally {
-      setUploading(false);
-    }
-  }
-
-
 
   async function update_form(e) {
     e.preventDefault();
@@ -150,10 +107,10 @@ function App() {
     fetch(`${API}/confirm_values`, 
     {method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      body: {
+      body: JSON.stringify({
         Invoice: selectedInvoice,
-        LineItems: selectedLineItems
-      }
+        InvoiceLineItems: selectedLineItems
+      })
     }).then(res => res.json());
 
     const invoiceNum = originalInvoice.InvoiceNumber;
@@ -191,7 +148,7 @@ function App() {
 
     //log the changes to the line items
     selectedLineItems.forEach((item) => { 
-      line_count = item.LineCount;
+      const line_count = item.LineCount;
       Object.entries(item).forEach(([key, value]) => {
       console.log(`Key: ${key}, Value: ${value}, Original: ${originalLineItems[line_count][key]}`);
       if (JSON.stringify(value) !== JSON.stringify(originalLineItems[line_count][key])) {
@@ -225,10 +182,10 @@ function App() {
     fetch(`${API}/update_all_inventory`, 
     {method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      body: {
+      body: JSON.stringify({
         Invoice: selectedInvoice,
-        LineItems: selectedLineItems
-      }
+        InvoiceLineItems: selectedLineItems
+      })
     }).then(res => res.json()) //ideally if res.json != '200' raise exception
     .then(() => {
         window.location.reload(false);

@@ -103,10 +103,10 @@ def validate(invoice, line_items):
     if (errors == ""):
         return "200"
     else:
-        broken_out_errors = errors.split('/')
-        for err in broken_out_errors:
-            if err != "":
-                print(err)
+        # broken_out_errors = errors.split('/') #TBD but currently causing failures
+        # for err in broken_out_errors:
+        #     if err != "":
+        #         print(err)
         return errors
 
 
