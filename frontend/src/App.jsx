@@ -151,7 +151,7 @@ function App() {
       const line_count = item.LineCount;
       Object.entries(item).forEach(([key, value]) => {
       console.log(`Key: ${key}, Value: ${value}, Original: ${originalLineItems[line_count][key]}`);
-      if (JSON.stringify(value) !== JSON.stringify(originalLineItems[line_count][key])) {
+      if (JSON.stringify(value) !== JSON.stringify(originalLineItems[line_count-1][key])) {
         const change = {
           'InvoiceID': invoiceNum,
           'FieldChanged': line_count+'-'+key,
