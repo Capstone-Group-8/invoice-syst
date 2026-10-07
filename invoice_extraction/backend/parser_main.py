@@ -1,6 +1,7 @@
 """
-Invoice Extractor
-Author: Andres Ortiz Sanchez
+Capstone Group 8 - Invoice Processing System
+Invoice Extractor main controller
+Author: Andres Ortiz Sanchez @PlanetaryOS
 """
 
 import json

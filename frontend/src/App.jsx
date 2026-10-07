@@ -1,9 +1,8 @@
 /*
  * Capstone Group 8 - Invoice Processing System
- * Name: Seth Z. Roth
- * Date: October 4, 2026
- * Role: Interface Designer
- * Contribution: React invoice upload integration and human-in-the-loop review interface
+ * Main file for the React app frontend, including layout and uploader.
+ * Author: Seth Z. Roth
+ * @slittle95 contribution: Made the logic to make invoices editable. Added flow logic for invoice validation and report download.
  */
 
 import { useEffect, useState } from "react";
@@ -152,15 +151,11 @@ function App() {
     {method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: {
-        Invoice: JSON.stringify(selectedInvoice),
-        LineItems:JSON.stringify(selectedLineItems)
+        Invoice: selectedInvoice,
+        LineItems: selectedLineItems
       }
-    }).then(res => res.json())
-    //res is errors or '200'
-    if (res !== "200") {
-      // Handle validation errors
-      return res;
-    } //else continue
+    }).then(res => res.json());
+
     const invoiceNum = originalInvoice.InvoiceNumber;
     
     //log the changes to the main invoice
@@ -231,8 +226,8 @@ function App() {
     {method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: {
-        Invoice: JSON.stringify(selectedInvoice),
-        LineItems:JSON.stringify(selectedLineItems)
+        Invoice: selectedInvoice,
+        LineItems: selectedLineItems
       }
     }).then(res => res.json()) //ideally if res.json != '200' raise exception
     .then(() => {
@@ -268,14 +263,14 @@ async function uploadInvoice(e) {
         throw new Error(errorText || "Upload failed");
       }
 
-      await response.json();
+      const res = await response.json();
 
     setUploadMessage("Invoice processed successfully.");
-    setSelectedInvoice(response.metadata)
-    setSelectedLineItems(response.lineitems)
+    setSelectedInvoice(res.metadata)
+    setSelectedLineItems(res.lineitems)
     setEditable(true);
     setConfidence(true);
-    setOriginalInvoice(completeInvoice);
+    setOriginalInvoice(res.metadata);
       window.location.reload(false);
     } catch (error) {
       console.error(error);

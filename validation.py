@@ -1,7 +1,8 @@
 '''
+Capstone Group 8 - Invoice Processing System
+Validates invoice line item data arithmetically, semantically, and syntactically.
+Author: Sally Little @slittle95
 Created on Aug 26, 2026
-
-@author: Sally Little
 '''
 
 import re
@@ -44,10 +45,8 @@ def test_line_semantic_validation(line, group1, group3, count):
         #print("pass")
         return "200"
     return_group = ""
-    if (group1 == '0030'):
-        return_group += check_desc_for(['double-rolled'])
-    elif (group1 == '0031'):
-        return_group += check_desc_for(['double-rolled', 'irid', 'rainbow'])
+    if (group1 == '0031'):
+        return_group += check_desc_for(['irid', 'rainbow'])
     elif (group1 == '0001'):
         return_group += check_desc_for(['fine', 'frit'])
     elif (group1 == '0002'):
@@ -83,7 +82,7 @@ def validate(invoice, line_items):
     for i in line_items:
         count += 1
         #test the regex
-        x = re.search(r"0[0-9]{5}-[0-9]{4}-[A-Z]-[A-Z0-9]{4}", i.SuppliersID)
+        x = re.search(r"0[0-9]{5}-[A-Z0-9]{4}-[A-Z]-[A-Z0-9]{4}", i.SuppliersID)
         if not x:
             errors += fail_line_syntactic_validation(i.SuppliersID, count)
         else:

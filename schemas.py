@@ -1,3 +1,8 @@
+"""
+Defines the Pydantic schemas for the invoice system. These schemas are used for data validation and serialization/deserialization of request and response 
+payloads in the FastAPI application.
+Author: @slittle95
+"""
 from datetime import date, time, datetime
 from pydantic import BaseModel
 
@@ -83,8 +88,7 @@ class ChangeLogBase(BaseModel):
     OldValue: str
     NewValue: str
     Author: str | None = None
-    Timestamp: datetime = datetime.now()
-    #Timestamp: time | None = None
+    Timestamp: datetime | None = None
 
 class ChangeLogCreate(ChangeLogBase):
     pass

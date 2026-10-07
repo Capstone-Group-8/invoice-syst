@@ -1,7 +1,7 @@
 '''
 Integration test for testing CRUD operations
 Covers main, crud, seed_demo, database, schemas, and models for sqlite
-@Sally Little
+Author: Sally Little @slittle95
 Sep 16 2026
 '''
 import sys

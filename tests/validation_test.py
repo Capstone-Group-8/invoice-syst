@@ -1,6 +1,6 @@
 '''
 Unit test for testing the validation logic.
-@Sally Little
+Author: Sally Little @slittle95
 Aug 31 2026
 '''
 import sys

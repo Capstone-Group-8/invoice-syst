@@ -1,3 +1,9 @@
+"""
+Capstone Group 8 - Invoice Processing System
+Defines the FastAPI application for the invoice processing system. It includes endpoints for managing invoices, line items, inventory, suppliers, and change logs. 
+The application uses SQLAlchemy for database interactions and Pydantic for data validation.
+Author: @slittle95
+"""
 import os
 import aiofiles
 import datetime
@@ -138,7 +144,7 @@ def update_invoice(InvoiceNumber: str, invoice: InvoiceUpdate, db: Session = Dep
         raise HTTPException(status_code=404, detail="invoice not found")
     return updated
 
-@app.put("invoices/{InvoiceNumber}/lineitems/{SuppliersID}", response_model=InvoiceLineItem)
+@app.put("/invoices/{InvoiceNumber}/lineitems/{SuppliersID}", response_model=InvoiceLineItem)
 def update_line_item(InvoiceNumber: str,
                      SuppliersID: str,
                      line_item: InvoiceLineItemUpdate,

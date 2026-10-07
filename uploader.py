@@ -1,9 +1,8 @@
 """
 Capstone Group 8 - Invoice Processing System
-Name: Seth Z. Roth
-Date: October 4, 2026
-Role: Interface Designer
-Contribution: Integrated PDF upload processing with OCR, validation,
+Integrates business logic, OCR module, and frontend. Business logic controller.
+Author: @slittle95
+@sethzacharyroth-a11y contribution: Integrated PDF upload processing with OCR, validation,
 and the human-in-the-loop invoice review workflow.
 """
 

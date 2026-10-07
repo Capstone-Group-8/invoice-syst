@@ -1,6 +1,6 @@
 """
 Invoice Extractor
-Author: Andres Ortiz Sanchez
+Author: Andres Ortiz Sanchez @PlanetaryOS
 """
 
 import os

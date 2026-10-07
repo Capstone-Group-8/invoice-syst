@@ -1,9 +1,8 @@
 """
 Capstone Group 8 - Invoice Processing System
-Name: Seth Z. Roth
-Date: October 4, 2026
-Role: Interface Designer
-Contribution: Updated invoice metadata parsing to support OCR date values
+Turns OCR raw data into an invoice
+Author: Andres Ortiz Sanchez @PlanetaryOS
+@sethzacharyroth-a11y contribution: Updated invoice metadata parsing to support OCR date values
 appearing on separate rows during PDF upload integration.
 """
 
