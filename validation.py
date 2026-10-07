@@ -35,6 +35,8 @@ def fail_total_arithmetic_validation(invoice, subtotal):
 def test_line_semantic_validation(line, group1, group3, count):
     def check_desc_for(keys):
         desc = line.SuppliersDesc.lower()
+        if 'Invoice' in desc:
+            return(f"Semantic_error (line {count}) /")
         print("desc", desc)
         for key in keys:
             print("key", key)
@@ -45,8 +47,10 @@ def test_line_semantic_validation(line, group1, group3, count):
         #print("pass")
         return "200"
     return_group = ""
-    if (group1 == '0031'):
-        return_group += check_desc_for(['irid', 'rainbow'])
+    if (group1 == '0030'):
+        return_group += check_desc_for(['double-rolled'])
+    elif (group1 == '0031'):
+        return_group += check_desc_for(['double-rolled', 'irid', 'rainbow'])
     elif (group1 == '0001'):
         return_group += check_desc_for(['fine', 'frit'])
     elif (group1 == '0002'):
