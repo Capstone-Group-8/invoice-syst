@@ -418,7 +418,7 @@ def parse_line_items(rows):
         end = anchors[pos + 1][0] if pos + 1 < len(anchors) else len(rows)
         item_rows = rows[start:end]
         suppliers_id = compact_text(product_item["text"])
-        quantity = -1 #this can't start as None if you're going to make it an int later
+        quantity = -1 
         quantity_candidates = []
         for item in rows[start]:
             if item is product_item:

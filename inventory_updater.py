@@ -3,9 +3,6 @@ author: Sally Little
 Date Created: September 16
 
 '''
-import validation
-
-from inv import CompleteInvoice
 from datetime import date
 from dateutil.parser import parse
 from schemas import (
