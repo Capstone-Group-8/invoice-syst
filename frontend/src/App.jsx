@@ -66,8 +66,8 @@ function App() {
     setOriginalInvoice({ ...invoice});
     setOriginalLineItems([...selectedLineItems]);
     //for testing
-    setConfidence([0.89, 0.95, 0.05, 0.90, 0.78, 0.04, 0.56, 0.60, 0.53, 0.60, 0.87, 0.85, 0.53, 0.85, 0.59, 0.9, 0.58, 0.81, 0.58, 0.83, 0.58, 0.63 , 0.4, 0.5, 0.8])
-    setValidations(["","","", "","","", "", "","","","","", "", "", "Description contains the word Invoice."])
+    //setConfidence([0.89, 0.95, 0.05, 0.90, 0.78, 0.04, 0.56, 0.60, 0.53, 0.60, 0.87, 0.85, 0.53, 0.85, 0.59, 0.9, 0.58, 0.81, 0.58, 0.83, 0.58, 0.63 , 0.4, 0.5, 0.8])
+    //setValidations(["","","", "","","", "", "","","","","", "", "", "Description contains the word Invoice."])
     //end testing
     setEditable(true);  
     console.log(selectedLineItems);
