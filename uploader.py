@@ -37,9 +37,6 @@ def use_ocr(filepath):
     Convert OCR/parser output into application schema objects.
     str => tuple[InvoiceCreate, list[InvoiceLineItemCreate], list[list[float, float]]]
     """
-    #temp data
-    metadata_confidence = [0.5, 0.6, 0.3, 0.7, 0.5, 0.3, 0.8, 0.6]
-
     payload = parser_main.receive_file(filepath)
     #parser returns JSON object containing Invoice and InvoiceLineItems
 
@@ -48,7 +45,9 @@ def use_ocr(filepath):
 
     metadata = payload.get("Invoice", {})
     parsed_lineitems = payload.get("InvoiceLineItems", [])
-    confidence_intervals = metadata_confidence
+    confidence_intervals = metadata.get("Confidence")
+    if len(confidence_intervals) < 8:
+        confidence_intervals = [0,0,0,0,0,0,0,0] #if one or more fields is missing we don't know which, so all confidence is 0
 
     invoice_number = metadata.get("InvoiceNumber", "")
     order_date = metadata.get("OrderDate")
