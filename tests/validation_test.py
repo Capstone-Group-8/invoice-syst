@@ -57,7 +57,7 @@ def test_semantic_2():
         InvoiceLineItem(InvoiceNumber='INV009001',Quantity=1, SuppliersID='000100-0031-F-FULL', SuppliersDesc='Black Double-Rolled Rainbow', Rate=55.83, Amount=55.83, LineCount =7) #no 'irid'
         ]
     test = validation.validate(my_invoice, my_line_items)
-    #assert(test == "Semantic_error (line 1) /Semantic_error (line 2) /Semantic_error (line 6) /Semantic_error (line 7) /")
+    #print("test",test,"/test")
     assert(test ==["","Failed line validation: Supplier ID implies fine, but the description does not contain the keyword(s). ","Description contains the word Invoice. ","","","","Failed line validation: Supplier ID implies stringer, but the description does not contain the keyword(s). ","Failed line validation: Supplier ID implies irid, but the description does not contain the keyword(s). "])
 
 def test_semantic_3():

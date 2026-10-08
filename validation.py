@@ -10,8 +10,6 @@ import re
 def test_line_semantic_validation(line, group1, group3):
     def check_desc_for(keys):
         desc = line.SuppliersDesc.lower()
-        if 'Invoice' in desc:
-            return(f"Description contains the word Invoice. ")
         #print("desc", desc)
         for key in keys:
             #print("key", key)
@@ -22,6 +20,8 @@ def test_line_semantic_validation(line, group1, group3):
         #print("pass")
         return ""
     return_group = ""
+    if 'invoice' in line.SuppliersDesc.lower():
+        return_group += ("Description contains the word Invoice. ")
     if (group1 == '0031'):
         return_group += check_desc_for(['irid', 'rainbow'])
     elif (group1 == '0001'):
