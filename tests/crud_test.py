@@ -339,10 +339,11 @@ def test_handle_invoice():
             Amount=12.42,
             LineCount = 3,
     )
-    main.handle_invoice(invoice, [item1, item2, item3], [(0.95, 0.90), (0.42, 0.48), (0.85, 0.80)], db)
+    main.handle_invoice(invoice, [item1, item2, item3], [0.95, 0.85, 0.80], [""]*11, db)
     #TBD: test with new (updated "wrong") values fed to confirm_values
     confirm_values_result = main.confirm_values(invoice, [item1, item2, item3])
-    assert confirm_values_result == '200'
+    #print (confirm_values_result)
+    assert confirm_values_result == ["","","",""]
     main.update_all_inventory(invoice, [item1, item2, item3], db)
     new_invoice = main.read_invoice("INV-DEMO-06", db)
     line_items = main.read_invoice_items("INV-DEMO-06", db)

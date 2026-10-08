@@ -15,7 +15,8 @@ function App() {
   const [selectedLineItems, setSelectedLineItems] = useState([]);
   const [status, setStatus] = useState("Connecting to backend...");
   const [editable, setEditable] = useState(false);
-  const [confidence, setConfidence] = useState(false);
+  const [list_of_confidences, setConfidence] = useState(Array(90).fill(""));
+  const [list_of_errors, setValidations] = useState(Array(90).fill(""));
   const [selectedFile, setSelectedFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [uploadMessage, setUploadMessage] = useState("");
@@ -64,6 +65,10 @@ function App() {
     console.log(selectedLineItems);
     setOriginalInvoice({ ...invoice});
     setOriginalLineItems([...selectedLineItems]);
+    //for testing
+    //setConfidence([0.89, 0.95, 0.05, 0.90, 0.78, 0.04, 0.56, 0.60, 0.53, 0.60, 0.87, 0.85, 0.53, 0.85, 0.59, 0.9, 0.58, 0.81, 0.58, 0.83, 0.58, 0.63 , 0.4, 0.5, 0.8])
+    //setValidations(["","","", "","","", "", "","","","","", "", "", "Description contains the word Invoice."])
+    //end testing
     setEditable(true);  
     console.log(selectedLineItems);
   }
@@ -111,8 +116,8 @@ function App() {
         Invoice: selectedInvoice,
         InvoiceLineItems: selectedLineItems
       })
-    }).then(res => res.json());
-
+    }).then(res => setValidations(res));
+    if (''.join(map(str, list_of_errors)) != ""){return;}
     const invoiceNum = originalInvoice.InvoiceNumber;
     
     //log the changes to the main invoice
@@ -225,10 +230,11 @@ async function uploadInvoice(e) {
     setUploadMessage("Invoice processed successfully.");
     setSelectedInvoice(res.metadata)
     setSelectedLineItems(res.lineitems)
+    setConfidence(res.confidence_intervals)
+    setValidations(res.validation_intervals)
     setEditable(true);
-    setConfidence(true);
     setOriginalInvoice(res.metadata);
-      window.location.reload(false);
+      //window.location.reload(false);
     } catch (error) {
       console.error(error);
       setUploadMessage("Unable to process invoice.");
@@ -387,39 +393,47 @@ function downloadReport() {
         <section className="panel">
           <form name='form1' onSubmit={update_form}>
           <div className="summary-grid">
-            {/*<span>
+            <span>
               <label htmlFor="invoice_num">Invoice Number: </label> 
-              <input type="text" className="form-control" id="invoice_num" name = "invoice_num" defaultValue={selectedInvoice.InvoiceNumber} required></input>
-            </span>*/}
+              <input type="text" className="form-control" id="invoice_num" name = "invoice_num" 
+              value={selectedInvoice.InvoiceNumber || ""} required
+              onChange={(e) => collectUpdate("InvoiceNumber",e.target.value, false)}/>
+            {list_of_confidences[0]}
+            </span>
             <span>
               <label htmlFor="supplier">Supplier:</label> 
               <input type="text" className="form_control" id="supplier" name="supplier" 
               value={selectedInvoice.Supplier || ""} required
               onChange={(e) => collectUpdate("Supplier",e.target.value, false)}/>
+            {list_of_confidences[1]}
             </span>
             <span>
               <label htmlFor="order_date">Order Date: </label>
               <input type="date" className="form-control" id="order_date" name = "order_date" 
               value={selectedInvoice.OrderDate || ""} required
               onChange={(e) => collectUpdate("OrderDate",e.target.value, false)}/>
+            {list_of_confidences[2]}
             </span>
             <span>
               <label htmlFor="sales_order">Sales Order: </label>
               <input type="text" className="form-control" id="sales_order" name = "sales_order" 
               value={selectedInvoice.SalesOrderNo || ""} required
               onChange={(e) => collectUpdate("SalesOrderNo",e.target.value, false)}/>
+            {list_of_confidences[3]}
             </span>
             <span>
               <label htmlFor="due_date">Due: </label>
               <input type="date" className="form-control" id="due_date" name = "due_date" 
               value={selectedInvoice.DueDate || ""} required
               onChange={(e) => collectUpdate("DueDate",e.target.value, false)}/>
+            {list_of_confidences[4]}
             </span>
             <span>
               <label htmlFor="ship_date">Shipped On: </label>
               <input type="date" className="form-control" id="ship_date" name = "ship_date" 
               value={selectedInvoice.ShipDate || ""} required
               onChange={(e) => collectUpdate("ShipDate",e.target.value, false)}/>
+            {list_of_confidences[5]}
             </span>
           </div>
           <div className="summary-grid">
@@ -428,12 +442,15 @@ function downloadReport() {
               <input type="number" className="form_control" id="shipping" name="shipping" step = "0.01" min="0"
               value={selectedInvoice.ShippingHandling || ""} required
                 onChange={(e) => collectUpdate("ShippingHandling",e.target.value, false)}/>   
+            {list_of_confidences[6]}
             </span>
             <span>
               <label htmlFor="total">Total:</label>
               <input type="number" className="form_control" id="total" name="total" step="0.01" min="0"
               value={selectedInvoice.TotalAmt || ""} required
               onChange={(e) => collectUpdate("TotalAmt",e.target.value, false)}/>    
+            {list_of_confidences[7]}
+            <p className="error">  {list_of_errors[0]}</p>
             </span>
           </div>
           <input type="submit" />
@@ -453,6 +470,8 @@ function downloadReport() {
                   <input type="text" className="form-control" 
                   value={item.SuppliersID}
                   onChange={(e) => collectUpdate(item.LineCount + "-SuppliersID",e.target.value, true)}/>
+                <p>  {list_of_confidences[item.LineCount+7]}</p>
+                <p className="error">  {list_of_errors[item.LineCount-1]}</p>
                 </div>
 
                 <span>

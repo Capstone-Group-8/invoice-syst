@@ -174,7 +174,8 @@ def cache_inventory(db: Session = Depends(get_db)):
 
 def handle_invoice(metadata: InvoiceCreate, 
                    lineitems: list[InvoiceLineItemCreate], 
-                   confidence_intervals: list[tuple[float, float]], 
+                   confidence_intervals: list[float],
+                   validation_intervals: list[str], 
                    db: Session = Depends(get_db)):
     # -> JSON object{InvoiceCreate, list[InvoiceLineItemCreate], list[tuple[float, float]]}:
     create_new_invoice(metadata, db)
@@ -182,15 +183,14 @@ def handle_invoice(metadata: InvoiceCreate,
         create_new_line_item(metadata.InvoiceNumber, item, db)
     return ({"metadata": metadata,
              "lineitems": lineitems,
-             "confidence_intervals": confidence_intervals})
+             "confidence_intervals": confidence_intervals,
+             "validation_intervals": validation_intervals})
     #App.jsx.uploadInvoice calls editInvoice
     #user save calls confirm_values
 
 @app.post("/confirm_values")
 def confirm_values(Invoice: InvoiceCreate, InvoiceLineItems: list[InvoiceLineItemUpdate]):
     result = uploader.update(Invoice, InvoiceLineItems) #either '200' or errors
-    #if result != "200":
-        #raise HTTPException(status_code=400, detail="Validation failed")
     return result
     #if success, app.jsx updates invoice table, changes table, line_items table; calls update_all_inventory
 
@@ -222,12 +222,12 @@ async def upload_file(file: UploadFile, db: Session = Depends(get_db)):
             while chunk := await file.read(1024 * 1024):
                 await out.write(chunk)
         #return {"stored_as": str(target)}
-    metadata, lineitems, confidence_intervals = uploader.upload(target)
-    return handle_invoice(metadata, lineitems, confidence_intervals, db)    
+    metadata, lineitems, confidence_intervals, validation_intervals = uploader.upload(target)
+    return handle_invoice(metadata, lineitems, confidence_intervals, validation_intervals, db)    
 
 @app.get("/download")
 def download_report(db: Session = Depends(get_db), test_toggle=False): 
-    right_now = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    right_now = datetime.datetime.now().strftime('%Y-%m-%d %H-%M-%S')
     out_path = os.path.join(BASE_DIR,f"report_{right_now}.txt")
     text = [
         f"Report for {right_now}", "",
