@@ -190,7 +190,7 @@ def handle_invoice(metadata: InvoiceCreate,
 
 @app.post("/confirm_values")
 def confirm_values(Invoice: InvoiceCreate, InvoiceLineItems: list[InvoiceLineItemUpdate]):
-    result = uploader.update(Invoice, InvoiceLineItems) #either '200' or errors
+    result = uploader.update(Invoice, InvoiceLineItems) 
     return result
     #if success, app.jsx updates invoice table, changes table, line_items table; calls update_all_inventory
 
