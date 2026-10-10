@@ -471,7 +471,7 @@ function downloadReport() {
                   value={item.SuppliersID}
                   onChange={(e) => collectUpdate(item.LineCount + "-SuppliersID",e.target.value, true)}/>
                 <p>  {list_of_confidences[item.LineCount+7]}</p>
-                <p className="error">  {list_of_errors[item.LineCount-1]}</p>
+                <p className="error">  {list_of_errors[item.LineCount]}</p>
                 </div>
 
                 <span>
